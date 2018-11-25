@@ -1,0 +1,24 @@
+{
+  "env": {
+    "server": {
+      "plugins": ["babel-plugin-add-module-exports"],
+      "presets": [
+        ["env", {
+          "targets": {
+            "node": "current"
+          }
+        }]
+      ]
+    },
+    "client": {
+      "plugins": ["babel-plugin-add-module-exports"],
+      "presets": [
+        ["env", {
+          "targets": {
+            "browsers": ["last 2 versions", "safari >= 7"],
+          }
+        }]
+      ]
+    }
+  }
+}

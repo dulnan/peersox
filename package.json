@@ -1,0 +1,80 @@
+{
+  "name": "peersox",
+  "version": "0.0.1",
+  "description": "Simple, high performance client and server for P2P WebRTC and WebSocket data connections.",
+  "author": "Jan Hug <me@dulnan.net>",
+  "license": "MIT",
+  "keywords": [
+    "webrtc",
+    "websocket",
+    "p2p",
+    "data channel",
+    "data",
+    "peer",
+    "data channel stream",
+    "webrtc stream",
+    "peer",
+    "websockets"
+  ],
+  "files": [
+    "dist",
+    "src",
+    "LICENSE",
+    "README.md"
+  ],
+  "main": "lib/peersox.server.js",
+  "browser": "lib/peersox.client.min.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dulnan/peersox.git"
+  },
+  "scripts": {
+    "build": "webpack --env dev --mode development && webpack --env build --mode production",
+    "dev": "webpack --progress --colors --watch --env dev --mode development",
+    "test": "mocha --require babel-register --colors ./test/*.spec.js",
+    "test:watch": "mocha --require babel-register --colors -w ./test/*.spec.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "cors": "^2.8.5",
+    "eventemitter3": "^3.1.0",
+    "express": "^4.16.4",
+    "express-brute": "^1.0.1",
+    "express-brute-redis": "0.0.1",
+    "express-fingerprint": "^1.1.2",
+    "isomorphic-ws": "^4.0.1",
+    "js-cookie": "^2.2.0",
+    "redis": "^2.8.0",
+    "simple-peer": "^9.1.2",
+    "string-hash": "^1.1.3",
+    "ws": "^6.1.2"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0-beta.51",
+    "@babel/core": "^7.0.0-beta.51",
+    "@babel/preset-env": "^7.0.0-beta.51",
+    "axios": "^0.18.0",
+    "babel-eslint": "^8.0.3",
+    "babel-loader": "^8.0.0-beta.4",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-preset-env": "^7.0.0-beta.3",
+    "babel-register": "^7.0.0-beta.3",
+    "chai": "^4.1.2",
+    "eslint": "^5.8.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-loader": "^2.0.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-node": "^8.0.0",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "jsdom": "11.11.0",
+    "jsdom-global": "3.0.2",
+    "mocha": "^4.0.1",
+    "redis-mock": "^0.40.0",
+    "uglifyjs-webpack-plugin": "^1.2.7",
+    "webpack": "^4.12.2",
+    "webpack-cli": "^3.0.8",
+    "webpack-node-externals": "^1.7.2",
+    "yargs": "^10.0.3"
+  }
+}
