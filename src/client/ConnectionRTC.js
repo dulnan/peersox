@@ -93,6 +93,12 @@ class ConnectionRTC extends Connection {
   signal (signal) {
     this.peer.signal(signal)
   }
+
+  close () {
+    if (this.isConnected()) {
+      this.peer.destroy()
+    }
+  }
 }
 
 export default ConnectionRTC

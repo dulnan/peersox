@@ -16,12 +16,21 @@ export default class Socket {
 
     this.messageHandlers = {
       'client.register': this.onMessageRegister.bind(this),
+      'client.close': this.onMessageClose.bind(this),
       data: this.onMessageData.bind(this)
     }
 
     this.socketserver.on('connection', this.onConnection.bind(this))
 
     this.connections = {}
+  }
+
+  onMessageClose (client) {
+    if (client._peer) {
+      client._peer.close()
+    }
+
+    client.close()
   }
 
   async onMessageRegister (client, pairing) {

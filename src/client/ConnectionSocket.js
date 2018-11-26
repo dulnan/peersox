@@ -20,6 +20,7 @@ class ConnectionSocket extends Connection {
     this.url = url
     this.timeoutDuration = timeout
     this.timeout = null
+    this.closingTimeout = null
   }
 
   /**
@@ -91,7 +92,7 @@ class ConnectionSocket extends Connection {
     this._handleConnected()
 
     socket.onerror = this._handleSocketError.bind(this)
-    socket.onclose = this.close.bind(this)
+    socket.onclose = this._handleClose.bind(this)
     socket.onmessage = (e) => {
       this._handleIncomingMessage(e.data)
     }
@@ -128,15 +129,36 @@ class ConnectionSocket extends Connection {
   }
 
   /**
+   * Handle the close event of the WebSocket connection.
+   */
+  _handleSocketClose () {
+    window.clearTimeout(this.closingTimeout)
+    window.clearTimeout(this.timeout)
+    this._handleClose()
+  }
+
+  /**
    * Close the WebSocket connection.
    */
   close () {
-    if (this.socket) {
-      this.socket.close()
+    if (!this.isConnected()) {
+      this._debug('Info', 'Not connected, can not close connection')
+      return
     }
 
-    window.clearTimeout(this.timeout)
-    this._handleClose()
+    // Request the server to close the connection.
+    this.sendInternalEvent('client.close', {}, this.socket)
+
+    // Set a timeout in case the server doesn't respond or there are other
+    // issues. If that's the case, manually close the connection and do the
+    // clean up.
+    window.clearTimeout(this.closingTimeout)
+
+    this.closingTimeout = window.setTimeout(() => {
+      if (this.socket) {
+        this.socket.close()
+      }
+    }, 5000)
   }
 }
 

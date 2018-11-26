@@ -113,7 +113,7 @@ export class PeerSoxClient extends EventEmitter {
   initiate () {
     if (this._socket.isConnected()) {
       this._socket._handleAlreadyConnected()
-      return new Error('Socket already connected')
+      return Promise.reject(new Error('Socket already connected'))
     }
 
     return this._api.requestPairing()
@@ -134,14 +134,11 @@ export class PeerSoxClient extends EventEmitter {
    */
   join (code) {
     if (this._socket.isConnected()) {
-      return new Error('Socket already connected')
+      return Promise.reject(new Error('Socket already connected'))
     }
 
     return this._api.getHash(code)
       .then(this._connectSocket.bind(this))
-      .catch((error) => {
-        return error
-      })
   }
 
   /**
@@ -151,11 +148,7 @@ export class PeerSoxClient extends EventEmitter {
    * @private
    */
   _connectSocket (pairing) {
-    return this._socket.connect(pairing).then(pairing => {
-      return pairing
-    }).catch(error => {
-      return error
-    })
+    return this._socket.connect(pairing)
   }
 
   /**
@@ -208,6 +201,7 @@ export class PeerSoxClient extends EventEmitter {
     })
 
     this._socket.on('connection.closed', () => {
+      this._rtc.close()
       this.emit('connection.closed')
     })
 
@@ -228,6 +222,9 @@ export class PeerSoxClient extends EventEmitter {
     // Send the signaling data from this client to the peer.
     this._rtc.on('rtc.signal', (signal) => {
       this._socket.sendSignal(signal)
+    })
+
+    this._rtc.on('connection.closed', () => {
     })
   }
 }
