@@ -9,7 +9,6 @@
       "src/server.js",
       "src/client",
       "src/server",
-      "package.json",
       "README.md"
     ],
     "includePattern": ".js$",
