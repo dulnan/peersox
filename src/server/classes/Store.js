@@ -1,31 +1,11 @@
 import * as helpers from './../utils'
+import { Pairing, Validation } from './../../common/classes'
+
 import stringHash from 'string-hash'
 import { promisify } from 'util'
 
 const EXPIRE_CODE = 130 // 130 seconds
 const EXPIRE_PAIRED = 60 * 60 * 24 * 7 // 7 days
-
-/**
- * A pairing.
- *
- * @param {String} code The pairing code.
- * @param {String} hash The pairing hash.
- */
-function Pairing (code, hash) {
-  this.code = code
-  this.hash = hash
-}
-
-/**
- * A validation.
- *
- * @param {Boolean} isValid
- */
-class Validation {
-  constructor (isValid) {
-    this.isValid = isValid
-  }
-}
 
 /**
  * Handles all things related to generating pairing codes and hashes

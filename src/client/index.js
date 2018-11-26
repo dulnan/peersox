@@ -1,33 +1,149 @@
 import EventEmitter from 'eventemitter3'
 import http from 'axios'
-import API from './classes/API'
+import ClientAPI from './classes/ClientAPI'
 import ConnectionRTC from './classes/ConnectionRTC'
 import ConnectionSocket from './classes/ConnectionSocket'
-import getDebugger from '../utils/debug'
+import getDebugger from './utils/debug'
 
 /**
- * A WebRTC/WebSocket peer connection.
+ * The PeerSoxClient pairs another client via the server.
+ *
+ * A running PeerSox server is required for pairing – two clients can't pair
+ * with eachother without a server.
+ *
+ * Usage is different between the initiator (the one to request a pairing code)
+ * and the joiner (the one to validate a pairing code).
+ *
+ * ### The initiator
+ * ```javascript
+ * // Create a new client.
+ * let peersox = new PeerSoxClient({
+ *   url: 'http://localhost:3000',
+ *   debug: true
+ * })
+ *
+ * // Request a new Pairing.
+ * // If successful, the client is now connected to the PeerSox server and
+ * // waiting for the joiner to connet to the server.
+ * peersox.initiate().then(pairing => {
+ *   // The pairing code the joiner will need to use.
+ *   console.log(pairing.code) // => "123456"
+ * })
+ *
+ * // Once the joiner (the peer of this client) is connected, we can start
+ * // listening for incoming messages.
+ * peersox.on('peer.connected', () => {
+ *   // Receive binary data (e.g. ArrayBuffer).
+ *   peersox.onBinary = (data) => {
+ *     const buffer = new Uint8Array(data);
+ *     console.log(buffer)
+ *   }
+ *
+ *   // Receive string data.
+ *   peersox.onString = (data) => {
+ *     console.log(data)
+ *   }
+ * })
+ * ```
+ *
+ * ### The joiner
+ * ```javascript
+ * // Create a new client.
+ * let peersox = new PeerSoxClient({
+ *   url: 'http://localhost:3000',
+ *   debug: true
+ * })
+ *
+ * // Start pairing with the initiator.
+ * peersox.join('123456').then(status => {
+ *   // The client is now connected with the server.
+ *
+ *   // The pairing succeeded when the following event is emitted.
+ *   peersox.on('peer.connected', () => {
+ *     // The client is now connected to its peer.
+ *     // Let's send a message every second.
+ *     interval = window.setInterval(() => {
+ *       const numbers = [
+ *         Math.round(Math.random() * 100),
+ *         Math.round(Math.random() * 100),
+ *         Math.round(Math.random() * 100)
+ *       ]
+ *
+ *       const byteArray = new Uint8Array(numbers)
+ *
+ *       // Send an ArrayBuffer.
+ *       peersox.send(byteArray.buffer)
+ *
+ *       // Send a string.
+ *       peersox.send(numbers.join(';'))
+ *     }, 1000)
+ *   })
+ * })
+ * ```
+ *
+ * @exports PeerSoxClient
+ * @extends EventEmitter
  */
 export default class PeerSoxClient extends EventEmitter {
+  /**
+   * Create a new PeerSox client.
+   *
+   * @param {object} options The options for the client.
+   * @param {string} options.url The URL where the PeerSox server is reachable.
+   * @param {boolean} options.autoUpgrade Automatically upgrade to a WebRTC connection.
+   * @param {boolean} options.debug When enabled, debugging info is logged.
+   */
   constructor ({
     url = 'http://localhost:3000',
+    autoUpgrade = true,
     debug = false
   } = {}) {
     super()
 
-    this.api = new API({
+    /**
+     * Makes requests to the PeerSox REST API server.
+     *
+     * @member {ClientAPI}
+     * @private
+     */
+    this._api = new ClientAPI({
       debug,
       http,
       url: url + '/api'
     })
 
-    this.socket = new ConnectionSocket({
+    /**
+     * Manage WebSocket connection to the server.
+     *
+     * @member {ConnectionSocket}
+     * @private
+     */
+    this._socket = new ConnectionSocket({
       url: url.replace(/^http/, 'ws') + '/ws',
       debug
     })
 
-    this.rtc = new ConnectionRTC({ debug })
-    this.debug = getDebugger(debug, 'PeerSoxClient')
+    /**
+     * Manage WebRTC connection to the peer.
+     *
+     * @member {ConnectionRTC}
+     * @private
+     */
+    this._rtc = new ConnectionRTC({ debug })
+
+    /**
+     * Logs debugging messages to the console.
+     *
+     * @member {function}
+     * @private
+     */
+    this._debug = getDebugger(debug, 'PeerSoxClient')
+
+    /**
+     * @member {boolean}
+     * @private
+     */
+    this._autoUpgrade = autoUpgrade
 
     this._addEventListeners()
   }
@@ -38,8 +154,8 @@ export default class PeerSoxClient extends EventEmitter {
    * @param {function}
    */
   set onBinary (fn) {
-    this.socket._onBinary = fn
-    this.rtc._onBinary = fn
+    this._socket._onBinary = fn
+    this._rtc._onBinary = fn
   }
 
   /**
@@ -48,12 +164,12 @@ export default class PeerSoxClient extends EventEmitter {
    * @param {function}
    */
   set onString (fn) {
-    this.socket._onString = fn
-    this.rtc._onString = fn
+    this._socket._onString = fn
+    this._rtc._onString = fn
   }
 
   /**
-   * Initialize pairing.
+   * Initiate a pairing.
    *
    * The method will call the API to fetch a new Pairing, consisting of the code
    * and hash. If this is successful, it will try to establish a WebSocket
@@ -66,13 +182,13 @@ export default class PeerSoxClient extends EventEmitter {
    *
    * @returns {Promise<Pairing>} The pairing used for connecting.
    */
-  initPairing () {
-    if (this.socket.isConnected()) {
-      this.socket._handleAlreadyConnected()
+  initiate () {
+    if (this._socket.isConnected()) {
+      this._socket._handleAlreadyConnected()
       return new Error('Socket already connected')
     }
 
-    return this.api.requestPairing()
+    return this._api.requestPairing()
       .then(this._connectSocket.bind(this))
       .catch(error => {
         return error
@@ -80,28 +196,34 @@ export default class PeerSoxClient extends EventEmitter {
   }
 
   /**
-   * Pair this client with a peer.
+   * Join an initiated pairing.
    *
    * The given code is from a Pairing. It is first validated via the API and if
-   * this is successful, a WebSocket connection is attempted.
+   * this is successful, a WebSocket connection to the server is attempted.
    *
    * @param {number|string} code The code to validate.
    * @returns {Promise<Pairing>} The pairing to be used for connecting.
    */
-  pair (code) {
-    if (this.socket.isConnected()) {
+  join (code) {
+    if (this._socket.isConnected()) {
       return new Error('Socket already connected')
     }
 
-    return this.api.getHash(code)
+    return this._api.getHash(code)
       .then(this._connectSocket.bind(this))
       .catch((error) => {
         return error
       })
   }
 
+  /**
+   * Connect to the WebSocket server given the pairing.
+   *
+   * @param {Pairing} pairing
+   * @private
+   */
   _connectSocket (pairing) {
-    return this.socket.connect(pairing).then(pairing => {
+    return this._socket.connect(pairing).then(pairing => {
       return pairing
     }).catch(error => {
       return error
@@ -111,60 +233,73 @@ export default class PeerSoxClient extends EventEmitter {
   /**
    * Send data to the peer.
    *
+   * It's possible to send either string or binary data. Performance is likely
+   * to be better when sending binary data, for example an ArrayBuffer.
+   *
+   * This method will not perform any checks on the validity or compatibility of
+   * the given data's type with WebSocket or WebRTC.
+   *
    * @param {string|ArrayBuffer} data The data to send to the peer.
    */
   send (data) {
-    if (this.rtc.isConnected()) {
-      this.rtc.send(data)
+    if (this._rtc.isConnected()) {
+      this._rtc.send(data)
     } else {
-      this.socket.send(data)
+      this._socket.send(data)
     }
   }
 
   /**
    * Upgrade the connection to WebRTC.
    *
+   * Call this method when you disabled automatic upgrading.
+   *
    * @param {boolean} isInitiator Whether this client is initiating.
    */
   upgrade (isInitiator) {
-    this.rtc.connect(isInitiator)
+    this._rtc.connect(isInitiator)
   }
 
   /**
-   * Close all connections.
+   * Close all connections and attempt to disconnect the peer.
    */
   close () {
-    this.rtc.close()
-    this.socket.close()
+    this._rtc.close()
+    this._socket.close()
   }
 
   /**
    * Add event listeners to both Connection instances.
+   *
+   * @private
    */
   _addEventListeners () {
     // Pass the events to the parent.
-    this.socket.on('connection.established', (data) => {
+    this._socket.on('connection.established', (data) => {
       this.emit('connection.established', data)
     })
 
-    this.socket.on('connection.closed', () => {
+    this._socket.on('connection.closed', () => {
       this.emit('connection.closed')
     })
 
     // If this client is connected to a peer, try to upgrade the connection.
-    this.socket.on('peer.connected', (data) => {
+    this._socket.on('peer.connected', (data) => {
       this.emit('peer.connected', data)
-      this.upgrade(data.isInitiator)
+
+      if (this._autoUpgrade) {
+        this.upgrade(data.isInitiator)
+      }
     })
 
     // Pass the signaling data from the peer to this client.
-    this.socket.on('peer.signal', (signal) => {
+    this._socket.on('peer.signal', (signal) => {
       this.rtc.signal(signal)
     })
 
     // Send the signaling data from this client to the peer.
-    this.rtc.on('rtc.signal', (signal) => {
-      this.socket.sendSignal(signal)
+    this._rtc.on('rtc.signal', (signal) => {
+      this._socket.sendSignal(signal)
     })
   }
 }

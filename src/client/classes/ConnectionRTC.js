@@ -1,11 +1,13 @@
 import SimplePeer from 'simple-peer'
 import Connection from './Connection'
+import { CONNREFUSED } from 'dns';
 
 /**
  * A WebRTC/WebSocket peer connection.
- * @param {Object} opts
+ *
+ * @extends Connection
  */
-export default class ConnectionRTC extends Connection {
+class ConnectionRTC extends Connection {
   constructor ({
     debug = false
   } = {}) {
@@ -93,3 +95,5 @@ export default class ConnectionRTC extends Connection {
     this.peer.signal(signal)
   }
 }
+
+export default ConnectionRTC

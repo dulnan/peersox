@@ -5,9 +5,10 @@ import Connection from './Connection'
 
 /**
  * A WebRTC/WebSocket peer connection.
- * @param {Object} opts
+ *
+ * @extends Connection
  */
-export default class ConnectionSocket extends Connection {
+class ConnectionSocket extends Connection {
   constructor ({
     url = 'http://localhost:3000/peersox/',
     timeout = 10000,
@@ -138,3 +139,5 @@ export default class ConnectionSocket extends Connection {
     this._handleClose()
   }
 }
+
+export default ConnectionSocket

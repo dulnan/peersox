@@ -1,11 +1,11 @@
-import getDebugger from './../../utils/debug'
+import getDebugger from '../../utils/debug'
 import Cookies from 'js-cookie'
 import Pairing from './Pairing'
 
 /**
  * Manages the initialization, validation and storing of pairings.
  */
-export default class API {
+class ClientAPI {
   /**
    * @param {String} serverUrl The URL of the gymote server.
    */
@@ -100,3 +100,5 @@ export default class API {
     Cookies.remove('pairing')
   }
 }
+
+export default ClientAPI

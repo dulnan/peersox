@@ -5,8 +5,10 @@ import { INTERNAL_MESSAGE_PREFIX } from '../../settings'
 
 /**
  * The base Connection class.
+ *
+ * @extends EventEmitter
  */
-export default class Connection extends EventEmitter {
+class Connection extends EventEmitter {
   /**
    *
    * @param {boolean} debug Enable debug logging.
@@ -105,3 +107,5 @@ export default class Connection extends EventEmitter {
     this._debug('info', 'Connection already established')
   }
 }
+
+export default Connection

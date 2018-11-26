@@ -67,31 +67,36 @@ main()
 The client is designed to be as simple and performant as possible.
 
 ```javascript
+// Create a new client.
 let peersox = new PeerSoxClient({
   url: 'http://localhost:3000',
   debug: true
 })
 
+// Start pairing with the initiator.
 peersox.pair('123456').then(status => {
-  console.log('successfuly connected')
-})
+  // The client is now connected with the server.
 
-peersox.on('peer.connected', () => {
-  interval = window.setInterval(() => {
-    const numbers = [
-      Math.round(Math.random() * 100),
-      Math.round(Math.random() * 100),
-      Math.round(Math.random() * 100)
-    ]
+  // The pairing succeeded when the following event is emitted.
+  peersox.on('peer.connected', () => {
+    // The client is now connected to its peer.
+    // Let's send a message every second.
+    interval = window.setInterval(() => {
+      const numbers = [
+        Math.round(Math.random() * 100),
+        Math.round(Math.random() * 100),
+        Math.round(Math.random() * 100)
+      ]
 
-    const byteArray = new Uint8Array(numbers)
+      const byteArray = new Uint8Array(numbers)
 
-    // Send an ArrayBuffer.
-    peersox.send(byteArray.buffer)
+      // Send an ArrayBuffer.
+      peersox.send(byteArray.buffer)
 
-    // Send a string.
-    peersox.send(numbers.join(';'))
-  }, 1000)
+      // Send a string.
+      peersox.send(numbers.join(';'))
+    }, 1000)
+  })
 })
 ```
 
