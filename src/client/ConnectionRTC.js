@@ -1,6 +1,5 @@
 import SimplePeer from 'simple-peer'
 import Connection from './Connection'
-import { CONNREFUSED } from 'dns';
 
 /**
  * A WebRTC/WebSocket peer connection.

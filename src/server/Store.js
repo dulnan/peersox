@@ -1,5 +1,5 @@
-import * as helpers from './../utils'
-import { Pairing, Validation } from './../../common/classes'
+import { buildRandomCode, buildRandomHex, codeIsValid, pairingIsValid } from './utils/index.js'
+import { Pairing, Validation } from './../common/classes'
 
 import stringHash from 'string-hash'
 import { promisify } from 'util'
@@ -10,8 +10,10 @@ const EXPIRE_PAIRED = 60 * 60 * 24 * 7 // 7 days
 /**
  * Handles all things related to generating pairing codes and hashes
  * and validating them.
+ *
+ * @class
  */
-export default class Store {
+class Store {
   /**
    * @param {RedisClient} redisClient
    */
@@ -43,7 +45,7 @@ export default class Store {
     let hash = ''
 
     do {
-      hash = helpers.buildRandomHex()
+      hash = buildRandomHex()
       alreadyUsed = await this.keyExists(hash)
     } while (alreadyUsed)
 
@@ -61,7 +63,7 @@ export default class Store {
     let code = '000000'
 
     do {
-      code = helpers.buildRandomCode(numericHash)
+      code = buildRandomCode(numericHash)
       alreadyUsed = await this.keyExists(code)
     } while (alreadyUsed)
 
@@ -82,7 +84,7 @@ export default class Store {
     const codeIsSet = await this.redisSet(code, hash, 'EX', EXPIRE_CODE) === 'OK'
 
     if (hashIsSet && codeIsSet) {
-      return new Pairing(code, hash)
+      return new Pairing({ code, hash })
     } else {
       throw new Error('PairingGenerateFailed')
     }
@@ -96,7 +98,7 @@ export default class Store {
    * @returns {(Pairing|Object)} A pairing or an empty object if no pairing was found.
    */
   async getPairingFromCode (code) {
-    if (helpers.codeIsValid(code)) {
+    if (codeIsValid(code)) {
       const exists = await this.keyExists(code)
 
       if (exists) {
@@ -104,7 +106,7 @@ export default class Store {
         await this.redisDel(code)
         await this.redisExpire(hash, EXPIRE_PAIRED)
 
-        return new Pairing(code, hash)
+        return new Pairing({ code, hash })
       }
     }
     return {}
@@ -120,7 +122,7 @@ export default class Store {
   async validatePairing (pairing) {
     let isValid = false
 
-    if (helpers.pairingIsValid(pairing)) {
+    if (pairingIsValid(pairing)) {
       const hashExists = await this.keyExists(pairing.hash)
 
       if (hashExists) {
@@ -135,3 +137,5 @@ export default class Store {
     return new Validation(isValid)
   }
 }
+
+export default Store

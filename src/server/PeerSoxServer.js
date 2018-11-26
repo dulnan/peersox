@@ -1,8 +1,8 @@
 import express from 'express'
 import http from 'http'
-import Store from './classes/Store.js'
-import API from './classes/API.js'
-import Socket from './classes/Socket.js'
+import Store from './Store.js'
+import API from './API.js'
+import Socket from './Socket.js'
 
 /**
  * The PeerSox server class.
@@ -14,9 +14,18 @@ import Socket from './classes/Socket.js'
  * validated in that time slot, they are deleted. If they are validated, the
  * code is removed from redis, while the hash's expire time is increased.
  *
- * @class PeerSoxServer
+ * @class
+ * @module server
  */
-export default class PeerSoxServer {
+export class PeerSoxServer {
+  /**
+   * @param {object} options
+   * @param {object} options.app An existing express app.
+   * @param {object} options.server An existing http server.
+   * @param {object} options.storage The storage client to use for the store.
+   * @param {number} options.port The port on which the server should run.
+   * @param {array} options.middleware Additional middleware for use in express.
+   */
   constructor ({
     app = express(),
     server,

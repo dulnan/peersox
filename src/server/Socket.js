@@ -1,5 +1,5 @@
-import { encode, decode } from '../../utils/dataparser'
-import { INTERNAL_MESSAGE_PREFIX, HANDSHAKE_SUCCESS, HANDSHAKE_FAILED } from '../../settings'
+import { encode, decode } from '../common/dataparser'
+import { INTERNAL_MESSAGE_PREFIX, HANDSHAKE_SUCCESS, HANDSHAKE_FAILED } from '../common/settings'
 
 import { Server as WebSocketServer } from 'ws'
 

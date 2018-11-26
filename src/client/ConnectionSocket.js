@@ -1,5 +1,5 @@
 import WebSocket from 'isomorphic-ws'
-import { HANDSHAKE_SUCCESS, HANDSHAKE_FAILED } from '../../settings'
+import { HANDSHAKE_SUCCESS, HANDSHAKE_FAILED } from './../common/settings'
 
 import Connection from './Connection'
 

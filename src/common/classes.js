@@ -5,7 +5,7 @@
  * @param {String} hash The pairing hash.
  */
 export class Pairing {
-  constructor (code, hash) {
+  constructor ({ code, hash }) {
     this.code = code
     this.hash = hash
   }

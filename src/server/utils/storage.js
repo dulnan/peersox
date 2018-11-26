@@ -4,7 +4,7 @@
  *
  * @returns {RedisClient}
  */
-export default function getRedisClient () {
+export function getRedisClient () {
   return new Promise(async (resolve, reject) => {
     const url = process.env.REDIS_URL || '//localhost:6379'
 

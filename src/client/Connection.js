@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3'
-import getDebugger from '../../utils/debug'
-import { encode, decode } from '../../utils/dataparser'
-import { INTERNAL_MESSAGE_PREFIX } from '../../settings'
+import getDebugger from './../common/debug'
+import { encode, decode } from './../common/dataparser'
+import { INTERNAL_MESSAGE_PREFIX } from './../common/settings'
 
 /**
  * The base Connection class.

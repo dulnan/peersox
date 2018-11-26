@@ -35,7 +35,7 @@ export function isString (v) {
  * @returns {Boolean}
  */
 export function codeIsValid (code) {
-  if (!exports.isString(code)) {
+  if (!isString(code)) {
     return false
   }
 
@@ -65,5 +65,5 @@ export function hashIsValid (hash) {
  * @param {Pairing} pairing
  */
 export function pairingIsValid (pairing) {
-  return exports.codeIsValid(pairing.code) && exports.hashIsValid(pairing.hash)
+  return codeIsValid(pairing.code) && hashIsValid(pairing.hash)
 }

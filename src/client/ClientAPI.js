@@ -1,6 +1,6 @@
-import getDebugger from '../../utils/debug'
+import getDebugger from './../common/debug'
 import Cookies from 'js-cookie'
-import Pairing from './Pairing'
+import { Pairing } from './../common/classes'
 
 /**
  * Manages the initialization, validation and storing of pairings.

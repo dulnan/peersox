@@ -34,7 +34,7 @@ function getConfigClient (mode, libraryName) {
   return {
     mode: mode,
     entry: [
-      path.join(__dirname, '/src/client/index.js')
+      path.join(__dirname, '/src/index.js')
     ],
 
     devtool: 'source-map',
@@ -56,7 +56,7 @@ function getConfigServer (mode, libraryName) {
     target: 'node',
     mode: mode,
     entry: [
-      path.join(__dirname, '/src/server/index.js')
+      path.join(__dirname, '/src/server.js')
     ],
 
     devtool: 'source-map',
