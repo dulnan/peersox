@@ -1,5 +1,4 @@
 import EventEmitter from 'eventemitter3'
-import http from 'axios'
 import ClientAPI from './client/ClientAPI'
 import ConnectionRTC from './client/ConnectionRTC'
 import ConnectionSocket from './client/ConnectionSocket'
@@ -111,7 +110,6 @@ class PeerSoxClient extends EventEmitter {
      */
     this._api = new ClientAPI({
       debug,
-      http,
       url: url + '/api'
     })
 

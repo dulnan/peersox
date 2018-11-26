@@ -9,8 +9,7 @@ class ClientAPI {
   /**
    * @param {String} serverUrl The URL of the gymote server.
    */
-  constructor ({ url, debug, http }) {
-    this.http = http
+  constructor ({ url, debug }) {
     this.url = url
     this.debug = getDebugger(debug, 'API')
   }
@@ -26,7 +25,16 @@ class ClientAPI {
     if (cookie) {
       try {
         const pairing = JSON.parse(cookie)
-        this.http.post(this.url + '/pairing/validate', pairing).then((response) => {
+
+        window.fetch(this.url + '/pairing/validate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(pairing)
+        }).then((response) => {
+          return response.json()
+        }).then((response) => {
           const isValid = response.data.isValid
           if (isValid) {
             cb(new Pairing(pairing))
@@ -47,12 +55,11 @@ class ClientAPI {
    * @returns {Pairing}
    */
   requestPairing () {
-    return this.http.get(this.url + '/code/get').then(response => {
-      if (response.data && response.data.hash) {
-        return new Pairing({
-          hash: response.data.hash,
-          code: response.data.code
-        })
+    return window.fetch(this.url + '/code/get').then(response => {
+      return response.json()
+    }).then(pairing => {
+      if (pairing) {
+        return new Pairing(pairing)
       }
 
       return new Error('Could not request pairing.')
@@ -68,14 +75,17 @@ class ClientAPI {
    * @returns {Pairing}
    */
   getHash (code) {
-    return this.http.post(this.url + '/code/validate', {
-      code
+    return window.fetch(this.url + '/code/validate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ code })
     }).then(response => {
-      if (response.data.code && response.data.hash) {
-        return new Pairing({
-          hash: response.data.hash,
-          code: response.data.code
-        })
+      return response.json()
+    }).then(pairing => {
+      if (pairing.code && pairing.hash) {
+        return new Pairing(pairing)
       }
 
       return new Error('Code is not valid')
