@@ -1,3 +1,10 @@
+import express from 'express'
+import http from 'http'
+import redisMock from 'redis-mock'
+import Store from './server/Store.js'
+import API from './server/API.js'
+import Socket from './server/Socket.js'
+
 /**
  * The server manages the generation and validation of pairing codes and hashes.
  * They are stored in redis, for local development redis-mock is used.
@@ -6,20 +13,17 @@
  * validated in that time slot, they are deleted. If they are validated, the
  * code is removed from redis, while the hash's expire time is increased.
  *
- * ### Minimal example
- * This will start a server on port 3000, using redis-mock for storage.
- * It is not meant for production use.
+ * @example <caption>Minimal</caption>
+ * // Start a server on port 3000, using redis-mock for storage.
+ * // This is not meant for production use.
  *
- * ```javascript
- * var PeerSoxServer = require('peersox/lib/peersox.server.js').default
+ * const PeerSoxServer = require('peersox/lib/peersox.server.js').default
  * new PeerSoxServer()
- * ```
  *
- * ### Advanced example
- * Connect and use a redis server for storage and provide an express middleware
- * that prevents brute force attacks on the server.
+ * @example <caption>Redis server with express-bruteforce</caption>
+ * // Connect and use a redis server for storage and provide an express
+ * // middleware that prevents brute force attacks on the server.
  *
- * ```javascript
  * const PeerSoxServer = require('peersox/lib/peersox.server.js').default
  * const ExpressBrute = require('express-brute')
  * const redis = require('redis')
@@ -50,9 +54,42 @@
  *     ]
  *   })
  * })
- * ```
  *
- * @module server
+ * @class
  */
+export class PeerSoxServer {
+  /**
+   * @param {object} options
+   * @param {object} options.app An existing express app.
+   * @param {object} options.server An existing http server.
+   * @param {object} options.redisClient The redis client to use for the store.
+   * @param {number} options.port The port on which the server should run.
+   * @param {array} options.middleware Additional middleware for use in express.
+   */
+  constructor ({
+    app = express(),
+    server,
+    redisClient = redisMock.createClient(),
+    port = process.env.PORT || 3000,
+    middleware = []
+  } = {}) {
+    this.store = new Store(redisClient)
+    this.server = server || http.createServer(app)
 
-export { PeerSoxServer as default } from './server/PeerSoxServer'
+    this.api = new API({
+      store: this.store,
+      app,
+      server: this.server,
+      port,
+      middleware
+    })
+
+    this.socket = new Socket({
+      store: this.store,
+      port,
+      server: this.server
+    })
+  }
+}
+
+export default PeerSoxServer

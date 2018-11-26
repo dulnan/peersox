@@ -7,8 +7,7 @@
     "include": [
       "src/index.js",
       "src/server.js",
-      "src/client",
-      "src/server",
+      "src/common/classes.js",
       "README.md"
     ],
     "includePattern": ".js$",
@@ -25,7 +24,7 @@
   "opts": {
     "destination": "./docs/",
     "encoding": "utf8",
-    "private": true,
+    "private": false,
     "recurse": true,
     "template": "./node_modules/jsdoc-template"
   }
