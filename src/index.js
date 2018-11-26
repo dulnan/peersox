@@ -92,13 +92,12 @@ class PeerSoxClient extends EventEmitter {
   /**
    * Create a new PeerSox client.
    *
+   * @param {string} url The URL where the PeerSox server is reachable.
    * @param {object} options The options for the client.
-   * @param {string} options.url The URL where the PeerSox server is reachable.
    * @param {boolean} options.autoUpgrade Automatically upgrade to a WebRTC connection.
    * @param {boolean} options.debug When enabled, debugging info is logged.
    */
-  constructor ({
-    url = 'http://localhost:3000',
+  constructor (url = 'http://localhost:3000', {
     autoUpgrade = true,
     debug = false
   } = {}) {
@@ -295,6 +294,19 @@ class PeerSoxClient extends EventEmitter {
   close () {
     this._rtc.close()
     this._socket.close()
+  }
+
+  /**
+   * Return the connected WebSocket socket.
+   *
+   * @throws Will throw an error if no WebSocket connection is made.
+   * @returns {WebSocket}
+   */
+  getSocket () {
+    if (!this._socket.isConnected()) {
+      throw new Error('Socket is not connected')
+    }
+    return this._socket.getSocket()
   }
 
   /**

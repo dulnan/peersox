@@ -161,6 +161,15 @@ class ConnectionSocket extends Connection {
       }
     }, 5000)
   }
+
+  /**
+   * Return the connected WebSocket socket.
+   *
+   * @returns {WebSocket}
+   */
+  getSocket () {
+    return this.socket
+  }
 }
 
 export default ConnectionSocket
