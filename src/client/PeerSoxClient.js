@@ -112,15 +112,10 @@ export class PeerSoxClient extends EventEmitter {
    */
   initiate () {
     if (this._socket.isConnected()) {
-      this._socket._handleAlreadyConnected()
       return Promise.reject(new Error('Socket already connected'))
     }
 
-    return this._api.requestPairing()
-      .then(this._connectSocket.bind(this))
-      .catch(error => {
-        return error
-      })
+    return this._api.requestPairing().then(this._connectSocket.bind(this))
   }
 
   /**
@@ -137,8 +132,7 @@ export class PeerSoxClient extends EventEmitter {
       return Promise.reject(new Error('Socket already connected'))
     }
 
-    return this._api.getHash(code)
-      .then(this._connectSocket.bind(this))
+    return this._api.getHash(code).then(this._connectSocket.bind(this))
   }
 
   /**

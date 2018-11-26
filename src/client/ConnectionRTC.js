@@ -95,9 +95,12 @@ class ConnectionRTC extends Connection {
   }
 
   close () {
-    if (this.isConnected()) {
-      this.peer.destroy()
+    if (!this.isConnected()) {
+      this._debug('Info', 'Not connected, can not close connection')
+      return
     }
+
+    this.peer.destroy()
   }
 }
 

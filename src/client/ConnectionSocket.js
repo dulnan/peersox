@@ -146,7 +146,8 @@ class ConnectionSocket extends Connection {
       return
     }
 
-    // Request the server to close the connection.
+    // Request the server to close the connection. This will also close the
+    // connection to the peer.
     this.sendInternalEvent('client.close', {}, this.socket)
 
     // Set a timeout in case the server doesn't respond or there are other
