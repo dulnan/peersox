@@ -170,6 +170,15 @@ class PeerSoxClient extends EventEmitter {
   }
 
   /**
+   * Return the current connection state.
+   *
+   * @returns {boolean}
+   */
+  isConnected () {
+    return this._socket.isConnected() || this._rtc.isConnected()
+  }
+
+  /**
    * Initiate a pairing.
    *
    * The method will call the API to fetch a new Pairing, consisting of the code
@@ -268,6 +277,10 @@ class PeerSoxClient extends EventEmitter {
    * @param {string|ArrayBuffer} data The data to send to the peer.
    */
   send (data) {
+    if (!this.isConnected()) {
+      return
+    }
+
     if (this._rtc.isConnected()) {
       this._rtc.send(data)
     } else {
