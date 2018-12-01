@@ -5,8 +5,6 @@ import { Server as WebSocketServer } from 'ws'
 
 require('util').inspect.defaultOptions.depth = 0
 
-// const nodeEnv = process.env.NODE_ENV || 'development'
-
 export default class Socket {
   constructor ({ server, store }) {
     this.store = store
@@ -27,7 +25,6 @@ export default class Socket {
   }
 
   onMessageClose (client) {
-    console.log(client)
     let hash = ''
     if (client._pairing && typeof client._pairing === 'object') {
       hash = client._pairing.hash
@@ -39,7 +36,6 @@ export default class Socket {
 
     this.connections[hash] = null
 
-    console.log(client._peer)
     if (client._peer) {
       if (client._peer.readyState === 1) {
         client._peer.close()

@@ -265,10 +265,17 @@ class PeerSoxClient extends EventEmitter {
   }
 
   /**
-   * Connect to the WebSocket server given the pairing.
+   * Connect to the WebSocket server with the given pairing.
+   *
+   * Use this if you have a pairing stored locally and want to restore a
+   * previously made connection.
+   * @example
+   * peersox.connect({ code: 123456, hash: 'xyz }).then(({ pairing, isInitiator }) => {
+   *   // You are now connected to the server.
+   * })
    *
    * @param {Pairing} pairing
-   * @private
+   * @returns {Promise<{pairing:Pairing, isInitiator:boolean }>}
    */
   connect (pairing) {
     return this._socket.connect(pairing)
@@ -432,8 +439,9 @@ class PeerSoxClient extends EventEmitter {
     })
 
     this._rtc.on('connection.closed', () => {
-      console.log('close the socket')
-      this._socket.close()
+      if (this._socket.isConnected()) {
+        this._socket.close()
+      }
     })
   }
 }

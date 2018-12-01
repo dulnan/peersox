@@ -158,19 +158,8 @@ class ConnectionSocket extends Connection {
       }
 
       this.socket.close()
+
       resolve()
-
-      // Set a timeout in case the server doesn't respond or there are other
-      // issues. If that's the case, manually close the connection and do the
-      // clean up.
-      // window.clearTimeout(this.closingTimeout)
-
-      // this.closingTimeout = window.setTimeout(() => {
-      //   if (this.isConnected()) {
-      //     this.socket.close()
-      //   }
-      //   resolve()
-      // }, 200)
     })
   }
 
