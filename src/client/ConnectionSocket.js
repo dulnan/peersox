@@ -93,7 +93,6 @@ class ConnectionSocket extends Connection {
    * Initialize the WebSocket connection after the handshake was successful.
    *
    * @param {WebSocket} socket The WebSocket instance.
-   * handshake.
    */
   initSocket (socket) {
     this._handleConnected()
