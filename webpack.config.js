@@ -1,13 +1,10 @@
-const webpack = require('webpack')
 const nodeExternals = require('webpack-node-externals')
 
 const path = require('path')
 const pkg = require('./package.json')
 
 function getFileName (target, mode, libraryName) {
-  const suffix = mode === 'production' ? '.min.js' : '.js'
-
-  return `${libraryName}.${target}${suffix}`
+  return `${libraryName}.${target}.js`
 }
 
 const configModule = {
@@ -33,6 +30,9 @@ const configResolve = {
 function getConfigClient (mode, libraryName) {
   return {
     mode: mode,
+    optimization: {
+      minimize: false
+    },
     entry: [
       path.join(__dirname, '/src/index.js')
     ],
@@ -55,6 +55,9 @@ function getConfigServer (mode, libraryName) {
   return {
     target: 'node',
     mode: mode,
+    optimization: {
+      minimize: false
+    },
     entry: [
       path.join(__dirname, '/src/server.js')
     ],

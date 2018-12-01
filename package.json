@@ -1,6 +1,6 @@
 {
   "name": "peersox",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Simple, high performance client and server for P2P WebRTC and WebSocket data connections.",
   "author": "Jan Hug <me@dulnan.net>",
   "license": "MIT",
@@ -22,7 +22,7 @@
     "README.md"
   ],
   "main": "lib/peersox.server.js",
-  "browser": "lib/peersox.client.min.js",
+  "browser": "lib/peersox.client.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/dulnan/peersox.git"
