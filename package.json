@@ -1,6 +1,6 @@
 {
   "name": "peersox",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Simple, high performance client and server for P2P WebRTC and WebSocket data connections.",
   "author": "Jan Hug <me@dulnan.net>",
   "license": "MIT",
@@ -39,7 +39,6 @@
     "cors": "^2.8.5",
     "eventemitter3": "^3.1.0",
     "express": "^4.16.4",
-    "express-fingerprint": "^1.1.2",
     "isomorphic-ws": "^4.0.1",
     "js-cookie": "^2.2.0",
     "redis-mock": "^0.40.0",
@@ -51,9 +50,9 @@
     "@babel/cli": "^7.0.0-beta.51",
     "@babel/core": "^7.0.0-beta.51",
     "@babel/preset-env": "^7.0.0-beta.51",
-    "babel-eslint": "^8.0.3",
+    "babel-eslint": "^10.0.1",
     "babel-loader": "^8.0.0-beta.4",
-    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-add-module-exports": "^1.0.0",
     "babel-preset-env": "^7.0.0-beta.3",
     "babel-register": "^7.0.0-beta.3",
     "chai": "^4.1.2",
@@ -66,14 +65,14 @@
     "eslint-plugin-standard": "^4.0.0",
     "jsdoc": "^3.5.5",
     "jsdoc-template": "github:braintree/jsdoc-template",
-    "jsdom": "11.11.0",
+    "jsdom": "13.0.0",
     "jsdom-global": "3.0.2",
     "minami": "^1.2.3",
-    "mocha": "^4.0.1",
-    "uglifyjs-webpack-plugin": "^1.2.7",
+    "mocha": "^5.2.0",
+    "uglifyjs-webpack-plugin": "^2.0.1",
     "webpack": "^4.12.2",
     "webpack-cli": "^3.1.2",
     "webpack-node-externals": "^1.7.2",
-    "yargs": "^10.0.3"
+    "yargs": "^12.0.5"
   }
 }
