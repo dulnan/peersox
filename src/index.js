@@ -3,6 +3,7 @@ import ClientAPI from './client/ClientAPI'
 import ConnectionRTC from './client/ConnectionRTC'
 import ConnectionSocket from './client/ConnectionSocket'
 import getDebugger from './common/debug'
+import Cookies from 'js-cookie'
 
 /**
  * @external EventEmitter
@@ -147,6 +148,20 @@ class PeerSoxClient extends EventEmitter {
     this._autoUpgrade = autoUpgrade
 
     this._addEventListeners()
+
+    if (debug) {
+      window.__PEERSOX_GET_STATUS = () => {
+        return this.status
+      }
+    }
+  }
+
+  get status () {
+    return {
+      isConnected: this.isConnected(),
+      webSocket: this._socket.status,
+      webRTC: this._rtc.status
+    }
   }
 
   /**
@@ -204,7 +219,7 @@ class PeerSoxClient extends EventEmitter {
       return Promise.reject(new Error('Socket already connected'))
     }
 
-    return this._api.requestPairing().then(this._connectSocket.bind(this))
+    return this._api.requestPairing().then(this.connect.bind(this))
   }
 
   /**
@@ -226,11 +241,27 @@ class PeerSoxClient extends EventEmitter {
    * @returns {Promise<Pairing>} The pairing to be used for connecting.
    */
   join (code) {
-    if (this._socket.isConnected()) {
-      return Promise.reject(new Error('Socket already connected'))
-    }
+    return this._api.getHash(code).then(this.connect.bind(this))
+  }
 
-    return this._api.getHash(code).then(this._connectSocket.bind(this))
+  /**
+   * Validate a pairing.
+   *
+   * The given code is from a Pairing. It is first validated via the API and if
+   * this is successful, a WebSocket connection to the server is attempted.
+   *
+   * @example
+   * peersox.validate({ code: 123456, hash: 'xyz }).then(isValid => {
+   *   peersox.on('peerConnected', () => {
+   *     // The peer is now connected.
+   *   })
+   * })
+   *
+   * @param {pairing} pairing The pairing to validate.
+   * @returns {Promise<boolean>} True if the pairing is valid.
+   */
+  validate (pairing) {
+    return this._api.validate(pairing)
   }
 
   /**
@@ -239,7 +270,7 @@ class PeerSoxClient extends EventEmitter {
    * @param {Pairing} pairing
    * @private
    */
-  _connectSocket (pairing) {
+  connect (pairing) {
     return this._socket.connect(pairing)
   }
 
@@ -304,7 +335,7 @@ class PeerSoxClient extends EventEmitter {
    */
   close () {
     this._rtc.close()
-    this._socket.close()
+    return this._socket.close()
   }
 
   /**
@@ -318,6 +349,51 @@ class PeerSoxClient extends EventEmitter {
       throw new Error('Socket is not connected')
     }
     return this._socket.getSocket()
+  }
+
+  /**
+   * Restore a pairing.
+   *
+   * @returns {Promise<Pairing|null>} The restorable pairing if it exists.
+   */
+  restorePairing () {
+    const cookie = Cookies.get('pairing')
+
+    if (!cookie) {
+      return Promise.resolve(null)
+    }
+
+    const [code, hash] = cookie.split('_')
+
+    if (!code || !hash) {
+      this.deletePairing()
+      return Promise.resolve(null)
+    }
+
+    const pairing = { code, hash }
+
+    return this.validate(pairing).then((isValid) => {
+      if (!isValid) {
+        this.deletePairing()
+      }
+      return isValid ? pairing : null
+    })
+  }
+
+  /**
+   * Save the given pairing in a cookie.
+   *
+   * @param {Pairing} pairing The pairing to save.
+   */
+  storePairing (pairing) {
+    Cookies.set('pairing', `${pairing.code}_${pairing.hash}`)
+  }
+
+  /**
+   * Delete all pairing cookies.
+   */
+  deletePairing () {
+    Cookies.remove('pairing')
   }
 
   /**
@@ -356,6 +432,8 @@ class PeerSoxClient extends EventEmitter {
     })
 
     this._rtc.on('connection.closed', () => {
+      console.log('close the socket')
+      this._socket.close()
     })
   }
 }

@@ -54,7 +54,11 @@ export default class API {
 
   // Return a Validation if the given pairing is valid.
   routePairingValidate (req, res) {
-    this.store.validatePairing(req.body).then(validation => {
+    if (!req.body.pairing) {
+      res.status(400)
+      return res.json({})
+    }
+    this.store.validatePairing(req.body.pairing).then(validation => {
       res.json(validation)
     })
   }

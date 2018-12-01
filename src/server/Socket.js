@@ -3,6 +3,8 @@ import { INTERNAL_MESSAGE_PREFIX, HANDSHAKE_SUCCESS, HANDSHAKE_FAILED } from '..
 
 import { Server as WebSocketServer } from 'ws'
 
+require('util').inspect.defaultOptions.depth = 0
+
 // const nodeEnv = process.env.NODE_ENV || 'development'
 
 export default class Socket {
@@ -16,7 +18,6 @@ export default class Socket {
 
     this.messageHandlers = {
       'client.register': this.onMessageRegister.bind(this),
-      'client.close': this.onMessageClose.bind(this),
       data: this.onMessageData.bind(this)
     }
 
@@ -26,15 +27,32 @@ export default class Socket {
   }
 
   onMessageClose (client) {
-    if (client._peer) {
-      client._peer.close()
+    console.log(client)
+    let hash = ''
+    if (client._pairing && typeof client._pairing === 'object') {
+      hash = client._pairing.hash
     }
 
-    client.close()
+    if (client._peer && client._peer._pairing && typeof client._peer._pairing === 'object') {
+      hash = client._peer._pairing.hash
+    }
+
+    this.connections[hash] = null
+
+    console.log(client._peer)
+    if (client._peer) {
+      if (client._peer.readyState === 1) {
+        client._peer.close()
+      }
+    }
+
+    if (client.readyState === 1) {
+      client.close()
+    }
   }
 
   async onMessageRegister (client, pairing) {
-    const { isValid } = await this.store.validatePairing(pairing)
+    const isValid = await this.store.validatePairing(pairing)
 
     if (!isValid) {
       client.send(HANDSHAKE_FAILED)
@@ -46,19 +64,22 @@ export default class Socket {
 
     if (this.connections[pairing.hash]) {
       const peer = this.connections[pairing.hash]
-
-      client._peer = peer
+      peer._pairing = pairing
       peer._peer = client
+      client._peer = peer
 
-      this.sendInternalEvent(client, 'peer.connected', { isInitiator: false })
-      this.sendInternalEvent(peer, 'peer.connected', { isInitiator: true })
+      this.sendInternalEvent(client, 'peer.connected', { isInitiator: false, pairing })
+      this.sendInternalEvent(peer, 'peer.connected', { isInitiator: true, pairing })
     } else {
+      client._pairing = pairing
       this.connections[pairing.hash] = client
     }
   }
 
   sendInternalEvent (client, eventName, data = {}) {
-    client.send(INTERNAL_MESSAGE_PREFIX + encode(eventName, data))
+    if (client.readyState === 1) {
+      client.send(INTERNAL_MESSAGE_PREFIX + encode(eventName, data))
+    }
   }
 
   onMessageData (client, data) {
@@ -66,30 +87,30 @@ export default class Socket {
   }
 
   onConnection (client) {
-    client.on('message', (messageRaw) => {
+    client.on('close', (closed) => {
+      this.onMessageClose(client)
+    })
+    client.on('message', messageRaw => {
       // Close the connection if the peer connection has closed.
       if (client._peer && client._peer.readyState === 3) {
         client.close()
         return
       }
 
-      // Directly send the message to the peer if its connected when:
-      // - the message is binary
-      // - it's not an internal message
-      if (client._peer && (typeof messageRaw !== 'string' || messageRaw.charAt(0) !== INTERNAL_MESSAGE_PREFIX)) {
+      if (typeof messageRaw === 'string' && messageRaw.charAt(0) === INTERNAL_MESSAGE_PREFIX) {
+        // Handle the case when it's an internal string message.
+        const message = decode(messageRaw.substring(1))
+
+        if (message && this.messageHandlers[message.name]) {
+          this.messageHandlers[message.name].call(this, client, message.data)
+          return
+        }
+      }
+
+      // Directly send the message to the peer if its connected.
+      if (client._peer && client._peer.readyState === 1) {
         client._peer.send(messageRaw)
-        return
       }
-
-      // Handle the case when it's an internal string message.
-      const message = decode(messageRaw.substring(1))
-
-      if (this.messageHandlers[message.name]) {
-        this.messageHandlers[message.name].call(this, client, message.data)
-        return
-      }
-
-      client._peer.send(messageRaw)
     })
   }
 }

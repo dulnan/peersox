@@ -1,5 +1,4 @@
 import getDebugger from './../common/debug'
-import Cookies from 'js-cookie'
 import { Pairing } from './../common/classes'
 
 /**
@@ -12,41 +11,6 @@ class ClientAPI {
   constructor ({ url, debug }) {
     this.url = url
     this.debug = getDebugger(debug, 'API')
-  }
-
-  /**
-   * Check for pairings stored in a cookie, validate them and return them.
-   *
-   * @param {Function} cb The callback, which will receive the pairing.
-   */
-  getStoredPairing (cb) {
-    const cookie = Cookies.get('pairing')
-
-    if (cookie) {
-      try {
-        const pairing = JSON.parse(cookie)
-
-        window.fetch(this.url + '/pairing/validate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(pairing)
-        }).then((response) => {
-          return response.json()
-        }).then((response) => {
-          const isValid = response.data.isValid
-          if (isValid) {
-            cb(new Pairing(pairing))
-          } else {
-            this.deletePairing(pairing)
-            cb()
-          }
-        })
-      } catch (e) {
-        this.deletePairing()
-      }
-    }
   }
 
   /**
@@ -76,8 +40,9 @@ class ClientAPI {
    */
   getHash (code) {
     return window.fetch(this.url + '/code/validate', {
-      method: 'POST',
+      method: 'post',
       headers: {
+        'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ code })
@@ -95,19 +60,29 @@ class ClientAPI {
   }
 
   /**
-   * Save the given pairing in a cookie.
+   * Validate a pairing.
    *
-   * @param {Pairing} pairing The pairing to save.
+   * @param {Pairing} pairing The pairing to validate.
+   * @returns {boolean}
    */
-  savePairing (pairing) {
-    Cookies.set('pairing', pairing.toString())
-  }
-
-  /**
-   * Delete all pairing cookies.
-   */
-  deletePairing () {
-    Cookies.remove('pairing')
+  validate (pairing) {
+    const body = JSON.stringify({
+      pairing: pairing
+    })
+    return window.fetch(this.url + '/pairing/validate', {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: body
+    }).then(response => {
+      return response.json()
+    }).then(({ isValid }) => {
+      return isValid
+    }).catch(error => {
+      return error
+    })
   }
 }
 

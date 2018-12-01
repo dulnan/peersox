@@ -23,6 +23,13 @@ class ConnectionSocket extends Connection {
     this.closingTimeout = null
   }
 
+  get status () {
+    return {
+      url: this.url,
+      socket: this.socket
+    }
+  }
+
   /**
    * Connect to the WebSocket server and perform a handshake with the given
    * pairing.
@@ -54,7 +61,7 @@ class ConnectionSocket extends Connection {
       socket.onerror = (error) => {
         window.clearTimeout(this.timeout)
         this._handleError()
-        reject(error)
+        return reject(error)
       }
 
       // Add a temporary message handler to listen for the handshake response
@@ -92,7 +99,7 @@ class ConnectionSocket extends Connection {
     this._handleConnected()
 
     socket.onerror = this._handleSocketError.bind(this)
-    socket.onclose = this._handleClose.bind(this)
+    socket.onclose = this._handleSocketClose.bind(this)
     socket.onmessage = (e) => {
       this._handleIncomingMessage(e.data)
     }
@@ -106,7 +113,9 @@ class ConnectionSocket extends Connection {
    * @param {String|ArrayBuffer} data The data to send to the server.
    */
   send (data) {
-    this.socket.send(data)
+    if (this.socket.readyState === 1) {
+      this.socket.send(data)
+    }
   }
 
   /**
@@ -141,25 +150,28 @@ class ConnectionSocket extends Connection {
    * Close the WebSocket connection.
    */
   close () {
-    if (!this.isConnected()) {
-      this._debug('Info', 'Not connected, can not close connection')
-      return
-    }
-
-    // Request the server to close the connection. This will also close the
-    // connection to the peer.
-    this.sendInternalEvent('client.close', {}, this.socket)
-
-    // Set a timeout in case the server doesn't respond or there are other
-    // issues. If that's the case, manually close the connection and do the
-    // clean up.
-    window.clearTimeout(this.closingTimeout)
-
-    this.closingTimeout = window.setTimeout(() => {
-      if (this.socket) {
-        this.socket.close()
+    return new Promise((resolve, reject) => {
+      if (!this.isConnected()) {
+        this._debug('Info', 'Not connected, can not close connection')
+        resolve()
+        return
       }
-    }, 5000)
+
+      this.socket.close()
+      resolve()
+
+      // Set a timeout in case the server doesn't respond or there are other
+      // issues. If that's the case, manually close the connection and do the
+      // clean up.
+      // window.clearTimeout(this.closingTimeout)
+
+      // this.closingTimeout = window.setTimeout(() => {
+      //   if (this.isConnected()) {
+      //     this.socket.close()
+      //   }
+      //   resolve()
+      // }, 200)
+    })
   }
 
   /**

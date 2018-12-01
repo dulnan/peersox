@@ -1,5 +1,9 @@
 export function decode (data) {
-  return JSON.parse(data)
+  try {
+    return JSON.parse(data)
+  } catch (e) {
+    return null
+  }
 }
 
 export function encode (name, data = {}) {

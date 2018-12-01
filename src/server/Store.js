@@ -117,7 +117,7 @@ class Store {
    * stored keys in redis.
    *
    * @param {Pairing} pairing
-   * @returns {Validation} Object with isValid property.
+   * @returns {boolean} Object with isValid property.
    */
   async validatePairing (pairing) {
     let isValid = false
@@ -133,7 +133,6 @@ class Store {
         }
       }
     }
-
     return new Validation(isValid)
   }
 }

@@ -15,6 +15,12 @@ class ConnectionRTC extends Connection {
     this.peer = null
   }
 
+  get status () {
+    return {
+      peer: this.peer
+    }
+  }
+
   /**
    * Return whether WebRTC is supported by the browser.
    *
