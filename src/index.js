@@ -422,8 +422,9 @@ class PeerSoxClient extends EventEmitter {
     })
 
     this._socket.on('connection.closed', () => {
-      this._rtc.close()
-      this.emit(PeerSoxClient.EVENT_CONNECTION_CLOSED)
+      if (!this._rtc.isConnected()) {
+        this.emit(PeerSoxClient.EVENT_CONNECTION_CLOSED)
+      }
     })
 
     // If this client is connected to a peer, try to upgrade the connection.
@@ -453,6 +454,9 @@ class PeerSoxClient extends EventEmitter {
 
     this._rtc.on('connection.closed', () => {
       this.emit(PeerSoxClient.EVENT_PEER_WEBRTC_CLOSED)
+      if (!this._socket.isConnected()) {
+        this.emit(PeerSoxClient.EVENT_CONNECTION_CLOSED)
+      }
     })
   }
 

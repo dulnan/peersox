@@ -21,6 +21,7 @@ class ConnectionSocket extends Connection {
     this.timeoutDuration = timeout
     this.timeout = null
     this.closingTimeout = null
+    this.pingInterval = null
   }
 
   get status () {
@@ -104,6 +105,10 @@ class ConnectionSocket extends Connection {
       this._handleIncomingMessage(e.data)
     }
 
+    this.pingInterval = window.setInterval(() => {
+      this.send('PING')
+    }, 20000)
+
     this.socket = socket
   }
 
@@ -143,6 +148,7 @@ class ConnectionSocket extends Connection {
   _handleSocketClose () {
     window.clearTimeout(this.closingTimeout)
     window.clearTimeout(this.timeout)
+    window.clearInterval(this.pingInterval)
     this._handleClose()
   }
 
