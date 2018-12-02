@@ -9,7 +9,6 @@
  * is removed from redis, while the hash's expire time is increased.
  */
 import bodyParser from 'body-parser'
-import cors from 'cors'
 
 export default class API {
   constructor ({
@@ -28,7 +27,6 @@ export default class API {
 
     this.app.use(bodyParser.urlencoded({ extended: true }))
     this.app.use(bodyParser.json())
-    this.app.use(cors())
 
     this.app.get('/api/config', this.middleware, this.routeConfig.bind(this))
     this.app.get('/api/code/get', this.middleware, this.routeCodeGet.bind(this))
