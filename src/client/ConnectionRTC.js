@@ -17,7 +17,8 @@ class ConnectionRTC extends Connection {
 
   get status () {
     return {
-      peer: this.peer
+      peer: this.peer,
+      isConnected: this.isConnected()
     }
   }
 
@@ -48,7 +49,24 @@ class ConnectionRTC extends Connection {
     // Initialize SimplePeer for WebRTC connections.
     this.peer = new SimplePeer({
       initiator: isInitiator,
-      objectMode: true
+      objectMode: true,
+      reconnectTimer: 200,
+      iceTransportPolicy: 'relay',
+      trickle: false,
+      allowHalfTrickle: true,
+      iceCompleteTimeout: 15000,
+      config: {
+        iceServers: [
+          {
+            'url': 'stun:stun.services.mozilla.com',
+            'urls': 'stun:stun.services.mozilla.com'
+          },
+          {
+            'url': 'stun:stun.l.google.com:19302',
+            'urls': 'stun:stun.l.google.com:19302'
+          }
+        ]
+      }
     })
 
     // Add event listeners for the WebRTC connection.
@@ -74,10 +92,7 @@ class ConnectionRTC extends Connection {
    * @param {object} signal The signaling data.
    */
   onSignal (signal) {
-    if (this.isConnected()) {
-      return
-    }
-
+    this._debug('Signal', signal)
     this.emit('rtc.signal', signal)
   }
 
@@ -98,6 +113,7 @@ class ConnectionRTC extends Connection {
    */
   signal (signal) {
     this.peer.signal(signal)
+    this._debug('Signal', signal)
   }
 
   close () {

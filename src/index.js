@@ -439,9 +439,7 @@ class PeerSoxClient extends EventEmitter {
     })
 
     this._rtc.on('connection.closed', () => {
-      if (this._socket.isConnected()) {
-        this._socket.close()
-      }
+      this.emit(PeerSoxClient.EVENT_PEER_WEBRTC_CLOSED)
     })
   }
 }
@@ -484,5 +482,19 @@ PeerSoxClient.EVENT_CONNECTION_CLOSED = 'connectionClosed'
  * @type {string}
  */
 PeerSoxClient.EVENT_PEER_CONNECTED = 'peerConnected'
+
+/**
+ * The WebRTC connection to the peer closed.
+ *
+ * @member
+ * @event PeerSoxClient#peerRtcClosed
+ * @type {Pairing}
+ */
+
+/**
+ * @member
+ * @type {string}
+ */
+PeerSoxClient.EVENT_PEER_WEBRTC_CLOSED = 'peerRtcClosed'
 
 export default PeerSoxClient

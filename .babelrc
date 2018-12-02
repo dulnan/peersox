@@ -2,13 +2,15 @@
   "env": {
     "server": {
       "plugins": ["babel-plugin-add-module-exports"],
-      "presets": [
-        ["env", {
-          "targets": {
-            "node": "current"
-          }
-        }]
-      ]
+      "presets": ["env"]
+      // "presets": [
+      //   ["env", {
+      //     "presets": ["env", "stage-2"]
+      //     "targets": {
+      //       "node": "1.0.0"
+      //     }
+      //   }]
+      // ]
     },
     "client": {
       "plugins": ["babel-plugin-add-module-exports"],

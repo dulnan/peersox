@@ -26,7 +26,8 @@ class ConnectionSocket extends Connection {
   get status () {
     return {
       url: this.url,
-      socket: this.socket
+      socket: this.socket,
+      isConnected: this.isConnected()
     }
   }
 

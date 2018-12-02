@@ -70,7 +70,7 @@ export class PeerSoxServer {
     app = express(),
     server,
     redisClient = redisMock.createClient(),
-    port = process.env.PORT || 3000,
+    port = 3000,
     middleware = []
   } = {}) {
     this.store = new Store(redisClient)

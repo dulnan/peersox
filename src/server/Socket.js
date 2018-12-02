@@ -58,6 +58,8 @@ export default class Socket {
 
     client.send(HANDSHAKE_SUCCESS)
 
+    client.binaryType = 'arraybuffer'
+
     if (this.connections[pairing.hash]) {
       const peer = this.connections[pairing.hash]
       peer._pairing = pairing

@@ -68,7 +68,11 @@ class Connection extends EventEmitter {
         this._onString(data)
       }
     } else {
-      this._onBinary(data)
+      if (data instanceof ArrayBuffer) {
+        this._onBinary(data)
+      } else if (data.buffer) {
+        this._onBinary(data.buffer)
+      }
     }
   }
 
