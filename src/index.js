@@ -99,7 +99,8 @@ class PeerSoxClient extends EventEmitter {
    */
   constructor (url = 'http://localhost:3000', {
     autoUpgrade = true,
-    debug = false
+    debug = false,
+    simplePeerOptions = {}
   } = {}) {
     super()
 
@@ -131,7 +132,7 @@ class PeerSoxClient extends EventEmitter {
      * @member {ConnectionRTC}
      * @private
      */
-    this._rtc = new ConnectionRTC({ debug })
+    this._rtc = new ConnectionRTC({ debug, simplePeerOptions })
 
     /**
      * Logs debugging messages to the console.
@@ -147,7 +148,12 @@ class PeerSoxClient extends EventEmitter {
      */
     this._autoUpgrade = autoUpgrade
 
+    this._upgradeTimeout = null
+
+    this._config = {}
+
     this._addEventListeners()
+    this._requestConfig()
 
     if (debug) {
       window.__PEERSOX_GET_STATUS = () => {
@@ -159,6 +165,7 @@ class PeerSoxClient extends EventEmitter {
   get status () {
     return {
       isConnected: this.isConnected(),
+      config: this._config,
       webSocket: this._socket.status,
       webRTC: this._rtc.status
     }
@@ -421,10 +428,16 @@ class PeerSoxClient extends EventEmitter {
 
     // If this client is connected to a peer, try to upgrade the connection.
     this._socket.on('peer.connected', (data) => {
+      const isInitiator = data.isInitiator === true
       this.emit(PeerSoxClient.EVENT_PEER_CONNECTED, data)
 
       if (this._autoUpgrade) {
-        this.upgrade(data.isInitiator)
+        // Wait a second before initializing WebRTC.
+        window.clearTimeout(this._upgradeTimeout)
+
+        this._upgradeTimeout = window.setTimeout(() => {
+          this.upgrade(isInitiator)
+        }, 1000)
       }
     })
 
@@ -440,6 +453,18 @@ class PeerSoxClient extends EventEmitter {
 
     this._rtc.on('connection.closed', () => {
       this.emit(PeerSoxClient.EVENT_PEER_WEBRTC_CLOSED)
+    })
+  }
+
+  /**
+   * Request the config from the server.
+   *
+   * @private
+   */
+  _requestConfig () {
+    this._api.requestConfig().then(config => {
+      this._config = config
+      this._rtc.updateIceServers(config.iceServers)
     })
   }
 }

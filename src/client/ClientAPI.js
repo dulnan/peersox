@@ -33,6 +33,25 @@ class ClientAPI {
   }
 
   /**
+   * Get the config from the server.
+   *
+   * @returns {object}
+   */
+  requestConfig () {
+    return window.fetch(this.url + '/config').then(response => {
+      return response.json()
+    }).then(config => {
+      if (config) {
+        return config
+      }
+
+      return new Error('Could not request config.')
+    }).catch(error => {
+      return error
+    })
+  }
+
+  /**
    * Given a code, get the corresponding pairing.
    *
    * @param {Number} code The code to get the pairing from.

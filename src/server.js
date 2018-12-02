@@ -1,5 +1,3 @@
-import express from 'express'
-import http from 'http'
 import redisMock from 'redis-mock'
 import Store from './server/Store.js'
 import API from './server/API.js'
@@ -67,27 +65,25 @@ export class PeerSoxServer {
    * @param {array} options.middleware Additional middleware for use in express.
    */
   constructor ({
-    app = express(),
+    app,
     server,
     redisClient = redisMock.createClient(),
-    port = 3000,
-    middleware = []
+    middleware = [],
+    config
   } = {}) {
     this.store = new Store(redisClient)
-    this.server = server || http.createServer(app)
+
+    this.socket = new Socket({
+      store: this.store,
+      server
+    })
 
     this.api = new API({
       store: this.store,
       app,
-      server: this.server,
-      port,
+      server,
+      config,
       middleware
-    })
-
-    this.socket = new Socket({
-      store: this.store,
-      port,
-      server: this.server
     })
   }
 }

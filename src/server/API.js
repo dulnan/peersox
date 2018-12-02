@@ -16,8 +16,8 @@ export default class API {
     app,
     server,
     store,
-    port,
-    middleware
+    middleware,
+    config
   } = {}) {
     this.store = store
 
@@ -30,13 +30,16 @@ export default class API {
     this.app.use(bodyParser.json())
     this.app.use(cors())
 
+    this.app.get('/api/config', this.middleware, this.routeConfig.bind(this))
     this.app.get('/api/code/get', this.middleware, this.routeCodeGet.bind(this))
     this.app.post('/api/code/validate', this.middleware, this.routeCodeValidate.bind(this))
     this.app.post('/api/pairing/validate', this.middleware, this.routePairingValidate.bind(this))
 
-    this.server.listen(port)
+    this.getConfig = config
+  }
 
-    console.log(`Listening on port ${port}`)
+  routeConfig (req, res) {
+    res.json(this.getConfig())
   }
 
   routeCodeGet (req, res) {

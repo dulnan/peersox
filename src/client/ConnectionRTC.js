@@ -1,6 +1,17 @@
 import SimplePeer from 'simple-peer'
 import Connection from './Connection'
 
+const SIMPLE_PEER_OPTIONS = {
+  reconnectTimer: 200,
+  iceTransportPolicy: 'relay',
+  trickle: true,
+  allowHalfTrickle: true,
+  iceCompleteTimeout: 10000,
+  config: {
+    iceServers: []
+  }
+}
+
 /**
  * A WebRTC/WebSocket peer connection.
  *
@@ -8,16 +19,22 @@ import Connection from './Connection'
  */
 class ConnectionRTC extends Connection {
   constructor ({
-    debug = false
+    debug = false,
+    simplePeerOptions = {}
   } = {}) {
     super(debug, 'WebRTC')
 
     this.peer = null
+
+    this._simplePeerOptions = { ...SIMPLE_PEER_OPTIONS, ...simplePeerOptions }
+
+    this._iceServers = []
   }
 
   get status () {
     return {
       peer: this.peer,
+      simplePeerOptions: this._simplePeerOptions,
       isConnected: this.isConnected()
     }
   }
@@ -47,27 +64,12 @@ class ConnectionRTC extends Connection {
     }
 
     // Initialize SimplePeer for WebRTC connections.
-    this.peer = new SimplePeer({
+    const options = {
+      ...this._simplePeerOptions,
       initiator: isInitiator,
-      objectMode: true,
-      reconnectTimer: 200,
-      iceTransportPolicy: 'relay',
-      trickle: false,
-      allowHalfTrickle: true,
-      iceCompleteTimeout: 15000,
-      config: {
-        iceServers: [
-          {
-            'url': 'stun:stun.services.mozilla.com',
-            'urls': 'stun:stun.services.mozilla.com'
-          },
-          {
-            'url': 'stun:stun.l.google.com:19302',
-            'urls': 'stun:stun.l.google.com:19302'
-          }
-        ]
-      }
-    })
+      objectMode: true
+    }
+    this.peer = new SimplePeer(options)
 
     // Add event listeners for the WebRTC connection.
     this.peer.on('connect', this._handleConnected.bind(this))
@@ -92,7 +94,7 @@ class ConnectionRTC extends Connection {
    * @param {object} signal The signaling data.
    */
   onSignal (signal) {
-    this._debug('Signal', signal)
+    this._debug('Signal - Sending', signal)
     this.emit('rtc.signal', signal)
   }
 
@@ -113,7 +115,7 @@ class ConnectionRTC extends Connection {
    */
   signal (signal) {
     this.peer.signal(signal)
-    this._debug('Signal', signal)
+    this._debug('Signal - Receiving', signal)
   }
 
   close () {
@@ -123,6 +125,10 @@ class ConnectionRTC extends Connection {
     }
 
     this.peer.destroy()
+  }
+
+  updateIceServers (servers) {
+    this._simplePeerOptions.config.iceServers = servers
   }
 }
 

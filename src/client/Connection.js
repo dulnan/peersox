@@ -38,7 +38,8 @@ class Connection extends EventEmitter {
    * @param {WebSocket|SimplePeer} connection The connection to send the event on.
    */
   sendInternalEvent (eventName, data, connection) {
-    connection.send(INTERNAL_MESSAGE_PREFIX + encode(eventName, data))
+    const message = encode(eventName, data)
+    connection.send(INTERNAL_MESSAGE_PREFIX + message)
   }
 
   /**
