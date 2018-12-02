@@ -39,30 +39,49 @@ export default class API {
   }
 
   routeConfig (req, res) {
-    res.json(this.getConfig())
+    try {
+      const config = this.getConfig()
+      return res.json(config)
+    } catch (e) {
+      console.log(e)
+      return res.status(503).send('Error getting config.')
+    }
   }
 
   routeCodeGet (req, res) {
     this.store.generatePairing().then(pairing => {
-      res.json(pairing)
+      return res.json(pairing)
+    }).catch(err => {
+      console.log(err)
+      return res.status(503)
     })
   }
 
   // Return a pairing or an empty object if the given code is valid.
   routeCodeValidate (req, res) {
+    if (!req.body.code) {
+      return res.status(400).send('Did not specify code to validate.')
+    }
+
     this.store.getPairingFromCode(req.body.code).then(pairing => {
-      res.json(pairing)
+      return res.json(pairing)
+    }).catch(err => {
+      console.log(err)
+      return res.status(503)
     })
   }
 
   // Return a Validation if the given pairing is valid.
   routePairingValidate (req, res) {
     if (!req.body.pairing) {
-      res.status(400)
-      return res.json({})
+      return res.status(400).send('Did not specify pairing to validate.')
     }
+
     this.store.validatePairing(req.body.pairing).then(validation => {
-      res.json(validation)
+      return res.json(validation)
+    }).catch(err => {
+      console.log(err)
+      return res.status(503)
     })
   }
 }
