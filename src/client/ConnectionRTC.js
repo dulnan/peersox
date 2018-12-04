@@ -1,6 +1,11 @@
 import SimplePeer from 'simple-peer'
 import Connection from './Connection'
 
+/**
+ * Default options for SimplePeer.
+ *
+ * @type {object}
+ */
 const SIMPLE_PEER_OPTIONS = {
   reconnectTimer: 200,
   iceTransportPolicy: 'relay',
@@ -18,6 +23,11 @@ const SIMPLE_PEER_OPTIONS = {
  * @extends Connection
  */
 class ConnectionRTC extends Connection {
+  /**
+   * @param {object} settings
+   * @param {boolean} settings.debug
+   * @param {object} settings.simplePeerOptions Options passed to SimplePeer.
+   */
   constructor ({
     debug = false,
     simplePeerOptions = {}
@@ -27,10 +37,13 @@ class ConnectionRTC extends Connection {
     this.peer = null
 
     this._simplePeerOptions = { ...SIMPLE_PEER_OPTIONS, ...simplePeerOptions }
-
-    this._iceServers = []
   }
 
+  /**
+   * Get the current status of the WebRTC connection.
+   *
+   * @returns {object}
+   */
   get status () {
     return {
       peer: this.peer,
@@ -118,6 +131,9 @@ class ConnectionRTC extends Connection {
     this._debug('Signal - Receiving', signal)
   }
 
+  /**
+   * Close the connection to the peer.
+   */
   close () {
     if (!this.isConnected()) {
       this._debug('Info', 'Not connected, can not close connection')
@@ -127,6 +143,11 @@ class ConnectionRTC extends Connection {
     this.peer.destroy()
   }
 
+  /**
+   * Set the list of ICE servers for WebRTC.
+   *
+   * @param {array} servers The list of ICE servers.
+   */
   updateIceServers (servers) {
     this._simplePeerOptions.config.iceServers = servers
   }

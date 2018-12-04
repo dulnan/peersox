@@ -72,7 +72,7 @@ class ConnectionSocket extends Connection {
         window.clearTimeout(this.timeout)
 
         if (message.data === HANDSHAKE_SUCCESS) {
-          this.initSocket(socket)
+          this.initPeerConnection(socket)
           resolve(pairing)
         } else if (message.data === HANDSHAKE_FAILED) {
           reject(new Error('Invalid pairing'))
@@ -96,7 +96,7 @@ class ConnectionSocket extends Connection {
    *
    * @param {WebSocket} socket The WebSocket instance.
    */
-  initSocket (socket) {
+  initPeerConnection (socket) {
     this._handleConnected()
 
     socket.onerror = this._handleSocketError.bind(this)

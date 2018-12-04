@@ -29,9 +29,12 @@ import Cookies from 'js-cookie'
  * // Request a new Pairing.
  * // If successful, the client is now connected to the PeerSox server and
  * // waiting for the joiner to connet to the server.
- * peersox.initiate().then(pairing => {
+ * peersox.createPairing().then(pairing => {
  *   // The pairing code the joiner will need to use.
  *   console.log(pairing.code) // => "123456"
+ *   peersox.connect(pairing).then(() => {
+ *     // You are now connected to the server.
+ *   })
  * })
  *
  * // Once the joiner (the peer of this client) is connected, we can start
@@ -57,29 +60,33 @@ import Cookies from 'js-cookie'
  * })
  *
  * // Start pairing with the initiator.
- * peersox.join('123456').then(status => {
- *   // The client is now connected with the server.
+ * peersox.joinPairing('123456').then(pairing => {
+ *   // You can now connect with the pairing.
  *
- *   // The pairing succeeded when the following event is emitted.
- *   peersox.on('peerConnected', () => {
- *     // The client is now connected to its peer.
- *     // Let's send a message every second.
- *     interval = window.setInterval(() => {
- *       const numbers = [
- *         Math.round(Math.random() * 100),
- *         Math.round(Math.random() * 100),
- *         Math.round(Math.random() * 100)
- *       ]
- *
- *       const byteArray = new Uint8Array(numbers)
- *
- *       // Send an ArrayBuffer.
- *       peersox.send(byteArray.buffer)
- *
- *       // Send a string.
- *       peersox.send(numbers.join(';'))
- *     }, 1000)
+ *   peersox.connect(pairing).then(() => {
+ *     // You are now connnected with the server.
  *   })
+ * })
+ *
+ * // The pairing succeeded when the following event is emitted.
+ * peersox.on('peerConnected', () => {
+ *   // The client is now connected to its peer.
+ *   // Let's send a message every second.
+ *   interval = window.setInterval(() => {
+ *     const numbers = [
+ *       Math.round(Math.random() * 100),
+ *       Math.round(Math.random() * 100),
+ *       Math.round(Math.random() * 100)
+ *     ]
+ *
+ *     const byteArray = new Uint8Array(numbers)
+ *
+ *     // Send an ArrayBuffer.
+ *     peersox.send(byteArray.buffer)
+ *
+ *     // Send a string.
+ *     peersox.send(numbers.join(';'))
+ *   }, 1000)
  * })
  *
  * @class
@@ -87,6 +94,7 @@ import Cookies from 'js-cookie'
  * @fires PeerSoxClient#connectionEstablished
  * @fires PeerSoxClient#connectionClosed
  * @fires PeerSoxClient#peerConnected
+ * @fires PeerSoxClient#peerRtcClosed
  */
 class PeerSoxClient extends EventEmitter {
   /**
@@ -148,13 +156,26 @@ class PeerSoxClient extends EventEmitter {
      */
     this._autoUpgrade = autoUpgrade
 
+    /**
+     * Timeout timer for the WebRTC upgrade attempt.
+     *
+     * @member {object}
+     * @private
+     */
     this._upgradeTimeout = null
 
+    /**
+     * The configuration object fetched from the server.
+     *
+     * @member {object}
+     * @private
+     */
     this._config = {}
 
     this._addEventListeners()
     this._requestConfig()
 
+    // Add a function to the global scope to retrive the client status.
     if (debug) {
       window.__PEERSOX_GET_STATUS = () => {
         return this.status
@@ -162,6 +183,11 @@ class PeerSoxClient extends EventEmitter {
     }
   }
 
+  /**
+   * Get the current status of the client.
+   *
+   * @returns {object}
+   */
   get status () {
     return {
       isConnected: this.isConnected(),
@@ -204,16 +230,14 @@ class PeerSoxClient extends EventEmitter {
    * Initiate a pairing.
    *
    * The method will call the API to fetch a new Pairing, consisting of the code
-   * and hash. If this is successful, it will try to establish a WebSocket
-   * connection with this pairing. If this is successful, the promise is
-   * resolved with this Pairing.
+   * and hash. The pairing is valid for a limited amount of time, depending on
+   * the configuration done on the server side.
    *
-   * The promise can be rejected when the API and/or WebSocket server is not
-   * available, when too many requests are made or when the WebSocket server
-   * refuses the handshake with the fetched pairing.
+   * The promise can be rejected when the API is not available, when too many
+   * requests are made.
    *
    * @example
-   * peersox.initiate().then(pairing => {
+   * peersox.createPairing().then(pairing => {
    *   // The pairing code the joiner will need to use.
    *   // => { hash: 'xyzxyzxyz', code: '123456' }
    *   console.log(pairing)
@@ -221,12 +245,12 @@ class PeerSoxClient extends EventEmitter {
    *
    * @returns {Promise<Pairing>} The pairing used for connecting.
    */
-  initiate () {
+  createPairing () {
     if (this._socket.isConnected()) {
       return Promise.reject(new Error('Socket already connected'))
     }
 
-    return this._api.requestPairing().then(this.connect.bind(this))
+    return this._api.requestPairing()
   }
 
   /**
@@ -236,32 +260,25 @@ class PeerSoxClient extends EventEmitter {
    * this is successful, a WebSocket connection to the server is attempted.
    *
    * @example
-   * peersox.join('123456').then(status => {
-   *   // The client is now connected with the server.
-   *
-   *   peersox.on('peerConnected', () => {
-   *     // The peer is now connected.
-   *   })
+   * peersox.joinPairing('123456').then(pairing => {
+   *   if (pairing) {
+   *     // You can now connect to the server.
+   *   }
    * })
    *
    * @param {number|string} code The code to validate.
    * @returns {Promise<Pairing>} The pairing to be used for connecting.
    */
-  join (code) {
-    return this._api.getHash(code).then(this.connect.bind(this))
+  joinPairing (code) {
+    return this._api.getHash(code)
   }
 
   /**
    * Validate a pairing.
    *
-   * The given code is from a Pairing. It is first validated via the API and if
-   * this is successful, a WebSocket connection to the server is attempted.
-   *
    * @example
    * peersox.validate({ code: 123456, hash: 'xyz }).then(isValid => {
-   *   peersox.on('peerConnected', () => {
-   *     // The peer is now connected.
-   *   })
+   *   // The pairing is valid.
    * })
    *
    * @param {pairing} pairing The pairing to validate.
@@ -274,11 +291,25 @@ class PeerSoxClient extends EventEmitter {
   /**
    * Connect to the WebSocket server with the given pairing.
    *
-   * Use this if you have a pairing stored locally and want to restore a
-   * previously made connection.
+   * This will directly attempt a connection to the WebSocket server, without
+   * prior validation of the pairing. The client and server will first perform a
+   * handshake, where the pairing is validated. The connection will be closed
+   * immediately if the handshake fails, without emitting any of the events.
+   *
+   * The server will decide the role (initiator or joiner) of this client
+   * depending on who was first.
+   *
+   * The promise can be rejected when the WebSocket server is not available,
+   * when too many requests are made or when the WebSocket server refuses the
+   * handshake with the fetched pairing.
+   *
    * @example
-   * peersox.connect({ code: 123456, hash: 'xyz }).then(({ pairing, isInitiator }) => {
+   * peersox.connect({ code: 123456, hash: 'xyz' }).then(({ pairing, isInitiator }) => {
    *   // You are now connected to the server.
+   *
+   *   peersox.on('peerConnnected', () => {
+   *     // You can now send messages to the other client.
+   *   })
    * })
    *
    * @param {Pairing} pairing

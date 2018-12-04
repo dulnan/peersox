@@ -37,35 +37,33 @@ The client is designed to be as simple and performant as possible.
 ```javascript
 let peersox = new PeerSoxClient('http://localhost:3000')
 
-peersox.initPairing().then(pairing => {
+peersox.createPairing().then(pairing => {
   console.log(pairing.code)
   // => "123456"
-
-  peersox.onBinary = (data) => {
-    const buffer = new Uint8Array(data);
-    console.log(buffer)
-  }
-
-  peersox.onString = (data) => {
-    console.log(data)
-  }
 })
+peersox.onBinary = (data) => {
+  const buffer = new Uint8Array(data);
+  console.log(buffer)
+}
+
+peersox.onString = (data) => {
+  console.log(data)
+}
 ```
 
 #### Joiner
 ```javascript
 let peersox = new PeerSoxClient('http://localhost:3000')
 
-peersox.join('123456').then(status => {
-  peersox.on('peer.connected', () => {
-    const byteArray = new Uint8Array([17, 21, 25])
+peersox.joinPairing('123456')
 
-    peersox.send(byteArray.buffer)
-    peersox.send(numbers.join(';'))
-  })
+peersox.on('peer.connected', () => {
+  const byteArray = new Uint8Array([17, 21, 35])
+
+  peersox.send(byteArray.buffer)
+  peersox.send(numbers.join(';'))
 })
 ```
-
 
 ## Acknowledgement
 Originally I forked [SocketPeer](https://github.com/cvan/socketpeer) due to
