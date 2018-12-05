@@ -105,10 +105,6 @@ class ConnectionSocket extends Connection {
       this._handleIncomingMessage(e.data)
     }
 
-    this.pingInterval = window.setInterval(() => {
-      this.send('PING')
-    }, 20000)
-
     this.socket = socket
   }
 

@@ -153,4 +153,6 @@ class ConnectionRTC extends Connection {
   }
 }
 
+ConnectionRTC.EVENT_RTC_SIGNAL = 'rtc.signal'
+
 export default ConnectionRTC

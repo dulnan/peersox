@@ -94,6 +94,7 @@ import Cookies from 'js-cookie'
  * @fires PeerSoxClient#connectionEstablished
  * @fires PeerSoxClient#connectionClosed
  * @fires PeerSoxClient#peerConnected
+ * @fires PeerSoxClient#peerTimeout
  * @fires PeerSoxClient#peerRtcClosed
  */
 class PeerSoxClient extends EventEmitter {
@@ -102,13 +103,18 @@ class PeerSoxClient extends EventEmitter {
    *
    * @param {string} url The URL where the PeerSox server is reachable.
    * @param {object} options The options for the client.
-   * @param {boolean} options.autoUpgrade Automatically upgrade to a WebRTC connection.
+   * @param {boolean} options.autoUpgrade Automatically upgrade to a WebRTC
+   * connection.
    * @param {boolean} options.debug When enabled, debugging info is logged.
+   * @param {object} options.simplePeerOptions Options passed to SimplePeer.
+   * @param {number} options.peerTimeout How long in seconds before closing peer
+   * connection.
    */
   constructor (url = 'http://localhost:3000', {
     autoUpgrade = true,
     debug = false,
-    simplePeerOptions = {}
+    simplePeerOptions = {},
+    peerTimeout = 30
   } = {}) {
     super()
 
@@ -172,6 +178,31 @@ class PeerSoxClient extends EventEmitter {
      */
     this._config = {}
 
+    /**
+     * Store the timestamp of the latest ping message.
+     *
+     * @member {number}
+     * @private
+     */
+    this._lastPing = Date.now()
+
+    /**
+     * Duration in seconds of how long a peer connection can remain silent
+     * before it is closed.
+     *
+     * @member {number}
+     * @private
+     */
+    this._peerTimeout = peerTimeout
+
+    /**
+     * Store the timeout for the ping timeout.
+     *
+     * @member {object}
+     * @private
+     */
+    this._pingTimeout = null
+
     this._addEventListeners()
     this._requestConfig()
 
@@ -233,7 +264,7 @@ class PeerSoxClient extends EventEmitter {
    * and hash. The pairing is valid for a limited amount of time, depending on
    * the configuration done on the server side.
    *
-   * The promise can be rejected when the API is not available, when too many
+   * The promise can be rejected when the API is not available or when too many
    * requests are made.
    *
    * @example
@@ -277,7 +308,7 @@ class PeerSoxClient extends EventEmitter {
    * Validate a pairing.
    *
    * @example
-   * peersox.validate({ code: 123456, hash: 'xyz }).then(isValid => {
+   * peersox.validate({ code: 123456, hash: 'xyz' }).then(isValid => {
    *   // The pairing is valid.
    * })
    *
@@ -442,53 +473,74 @@ class PeerSoxClient extends EventEmitter {
   }
 
   /**
+   * Delete the PeerSox instance.
+   *
+   * Closes all open connections and removes event listeners.
+   */
+  destroy () {
+    this._socket.close()
+    this._rtc.close()
+    this._removeEventListeners()
+  }
+
+  _handleConnectionEstablished (data) {
+    this.emit(PeerSoxClient.EVENT_CONNECTION_ESTABLISHED, data)
+  }
+
+  _handleConnnectionClosed (context) {
+    if (context === 'WebRTC') {
+      this.emit(PeerSoxClient.EVENT_PEER_WEBRTC_CLOSED)
+    }
+
+    if (!this._rtc.isConnected() && !this._socket.isConnected()) {
+      this.emit(PeerSoxClient.EVENT_CONNECTION_CLOSED)
+    }
+  }
+
+  _handlePeerConnected (data) {
+    const isInitiator = data.isInitiator === true
+    this.emit(PeerSoxClient.EVENT_PEER_CONNECTED, data)
+
+    if (this._autoUpgrade) {
+      // Wait a second before initializing WebRTC.
+      window.clearTimeout(this._upgradeTimeout)
+
+      this._upgradeTimeout = window.setTimeout(() => {
+        this.upgrade(isInitiator)
+      }, 1000)
+    }
+  }
+
+  /**
    * Add event listeners to both Connection instances.
    *
    * @private
    */
   _addEventListeners () {
-    // Pass the events to the parent.
-    this._socket.on('connection.established', (data) => {
-      this.emit(PeerSoxClient.EVENT_CONNECTION_ESTABLISHED, data)
-    })
+    this._socket.on(ConnectionSocket.EVENT_ESTABLISHED, this._handleConnectionEstablished.bind(this))
+    this._socket.on(ConnectionSocket.EVENT_CLOSED, this._handleConnnectionClosed.bind(this))
+    this._socket.on(ConnectionSocket.EVENT_PEER_CONNECTED, this._handlePeerConnected.bind(this))
+    this._socket.on(ConnectionSocket.EVENT_PEER_SIGNAL, this._rtc.signal.bind(this._rtc))
+    this._socket.on(ConnectionSocket.EVENT_PEER_PING, this._handlePingMessage.bind(this))
+    this._rtc.on(ConnectionRTC.EVENT_RTC_SIGNAL, this._socket.sendSignal.bind(this._socket))
+    this._rtc.on('peer.ping', this._handlePingMessage.bind(this))
+    this._rtc.on('connection.closed', this._handleConnnectionClosed.bind(this))
+  }
 
-    this._socket.on('connection.closed', () => {
-      if (!this._rtc.isConnected()) {
-        this.emit(PeerSoxClient.EVENT_CONNECTION_CLOSED)
-      }
-    })
-
-    // If this client is connected to a peer, try to upgrade the connection.
-    this._socket.on('peer.connected', (data) => {
-      const isInitiator = data.isInitiator === true
-      this.emit(PeerSoxClient.EVENT_PEER_CONNECTED, data)
-
-      if (this._autoUpgrade) {
-        // Wait a second before initializing WebRTC.
-        window.clearTimeout(this._upgradeTimeout)
-
-        this._upgradeTimeout = window.setTimeout(() => {
-          this.upgrade(isInitiator)
-        }, 1000)
-      }
-    })
-
-    // Pass the signaling data from the peer to this client.
-    this._socket.on('peer.signal', (signal) => {
-      this._rtc.signal(signal)
-    })
-
-    // Send the signaling data from this client to the peer.
-    this._rtc.on('rtc.signal', (signal) => {
-      this._socket.sendSignal(signal)
-    })
-
-    this._rtc.on('connection.closed', () => {
-      this.emit(PeerSoxClient.EVENT_PEER_WEBRTC_CLOSED)
-      if (!this._socket.isConnected()) {
-        this.emit(PeerSoxClient.EVENT_CONNECTION_CLOSED)
-      }
-    })
+  /**
+   * Remove all attached event listeners from the connection instances.
+   *
+   * @private
+   */
+  _removeEventListeners () {
+    this._socket.off('connection.established', this._handleConnectionEstablished)
+    this._socket.off('connection.closed', this._handleConnnectionClosed)
+    this._socket.off('peer.connected', this._handlePeerConnected)
+    this._socket.off('peer.signal', this._rtc.signal)
+    this._socket.off('peer.ping', this._handlePingMessage)
+    this._rtc.off('rtc.signal', this._socket.sendSignal)
+    this._rtc.off('peer.ping', this._handlePingMessage)
+    this._rtc.off('connection.closed', this._handleConnnectionClosed)
   }
 
   /**
@@ -501,6 +553,23 @@ class PeerSoxClient extends EventEmitter {
       this._config = config
       this._rtc.updateIceServers(config.iceServers)
     })
+  }
+
+  /**
+   * Handle incomming ping messages via WebSocket or WebRTC.
+   *
+   * @param {number} timestamp Timestamp when the ping was received.
+   */
+  _handlePingMessage (timestamp) {
+    this._lastPing = timestamp
+
+    window.clearTimeout(this._pingTimeout)
+
+    this._pingTimeout = window.setTimeout(() => {
+      this.emit(PeerSoxClient.EVENT_PEER_TIMEOUT)
+      this._rtc.close()
+      this._socket.close()
+    }, this._peerTimeout * 1000)
   }
 }
 
@@ -542,6 +611,20 @@ PeerSoxClient.EVENT_CONNECTION_CLOSED = 'connectionClosed'
  * @type {string}
  */
 PeerSoxClient.EVENT_PEER_CONNECTED = 'peerConnected'
+
+/**
+ * The peer connection has timed out.
+ *
+ * @member
+ * @event PeerSoxClient#peerTimeout
+ * @type {number}
+ */
+
+/**
+ * @member
+ * @type {string}
+ */
+PeerSoxClient.EVENT_PEER_TIMEOUT = 'peerTimeout'
 
 /**
  * The WebRTC connection to the peer closed.

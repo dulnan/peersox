@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3'
 import getDebugger from './../common/debug'
 import { encode, decode } from './../common/dataparser'
-import { INTERNAL_MESSAGE_PREFIX } from './../common/settings'
+import { INTERNAL_MESSAGE_PREFIX, PING } from './../common/settings'
 
 /**
  * The base Connection class.
@@ -19,6 +19,9 @@ class Connection extends EventEmitter {
 
     this._isConnected = false
     this._debug = getDebugger(debug, context)
+    this._context = context
+
+    this._pingInterval = null
 
     // Attach debug logging function to onBinary and onString. They must be
     // overwritten by the consumer of this library.
@@ -65,6 +68,8 @@ class Connection extends EventEmitter {
       if (data.charAt(0) === INTERNAL_MESSAGE_PREFIX) {
         const message = decode(data.substring(1))
         this.emit(message.name, message.data)
+      } else if (data === PING) {
+        this.emit('peer.ping', Date.now())
       } else {
         this._onString(data)
       }
@@ -94,6 +99,10 @@ class Connection extends EventEmitter {
     this._isConnected = true
     this.emit('connection.established')
     this._debug('info', 'Connection established')
+
+    this._pingInterval = window.setInterval(() => {
+      this.send(PING)
+    }, 20000)
   }
 
   /**
@@ -101,8 +110,10 @@ class Connection extends EventEmitter {
    */
   _handleClose () {
     this._isConnected = false
-    this.emit('connection.closed')
+    this.emit('connection.closed', this._context)
     this._debug('info', 'Connection closed')
+
+    window.clearInterval(this._pingInterval)
   }
 
   /**
@@ -112,5 +123,11 @@ class Connection extends EventEmitter {
     this._debug('info', 'Connection already established')
   }
 }
+
+Connection.EVENT_ESTABLISHED = 'connection.established'
+Connection.EVENT_CLOSED = 'connection.closed'
+Connection.EVENT_PEER_CONNECTED = 'peer.connected'
+Connection.EVENT_PEER_SIGNAL = 'peer.signal'
+Connection.EVENT_PEER_PING = 'peer.ping'
 
 export default Connection
