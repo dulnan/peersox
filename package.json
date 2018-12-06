@@ -1,6 +1,6 @@
 {
   "name": "peersox",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Simple, high performance client and server for P2P WebRTC and WebSocket data connections.",
   "author": "Jan Hug <me@dulnan.net>",
   "license": "MIT",

@@ -23,6 +23,18 @@ class Store {
     this.redisExists = promisify(redisClient.exists).bind(redisClient)
     this.redisDel = promisify(redisClient.del).bind(redisClient)
     this.redisExpire = promisify(redisClient.expire).bind(redisClient)
+
+    this._redisReady = false
+
+    redisClient.on('ready', () => {
+      this._redisReady = true
+      console.log('Redis is ready.')
+    })
+
+    redisClient.on('error', () => {
+      this._redisReady = false
+      console.log('Redis has errored.')
+    })
   }
 
   /**

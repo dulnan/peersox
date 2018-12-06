@@ -75,13 +75,15 @@ export default class Socket {
   }
 
   sendInternalEvent (client, eventName, data = {}) {
-    if (client.readyState === 1) {
+    if (client && client.readyState === 1) {
       client.send(INTERNAL_MESSAGE_PREFIX + encode(eventName, data))
     }
   }
 
   onMessageData (client, data) {
-    client._peer.send(data)
+    if (client && client._peer && client._peer.readyState === 1) {
+      client._peer.send(data)
+    }
   }
 
   onConnection (client) {
@@ -90,7 +92,7 @@ export default class Socket {
     })
     client.on('message', messageRaw => {
       // Close the connection if the peer connection has closed.
-      if (client._peer && client._peer.readyState === 3) {
+      if (client && client._peer && client._peer.readyState === 3) {
         client.close()
         return
       }
