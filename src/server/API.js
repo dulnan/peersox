@@ -25,15 +25,23 @@ export default class API {
     this.app = app
     this.server = server
 
-    this.app.use(bodyParser.urlencoded({ extended: true }))
-    this.app.use(bodyParser.json())
+    this.middleware.push(bodyParser.urlencoded({ extended: true }))
+    this.middleware.push((bodyParser.json()))
 
     this.app.get('/api/config', this.middleware, this.routeConfig.bind(this))
     this.app.get('/api/code/get', this.middleware, this.routeCodeGet.bind(this))
     this.app.post('/api/code/validate', this.middleware, this.routeCodeValidate.bind(this))
     this.app.post('/api/pairing/validate', this.middleware, this.routePairingValidate.bind(this))
+    this.app.options('/api/code/validate', this.middleware, this.routeOptions.bind(this))
+    this.app.options('/api/pairing/validate', this.middleware, this.routeOptions.bind(this))
 
     this.getConfig = config
+  }
+
+  routeOptions (req, res) {
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization, Content-Length, X-Requested-With')
+    res.send(200)
   }
 
   routeConfig (req, res) {

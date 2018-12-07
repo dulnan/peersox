@@ -277,10 +277,6 @@ class PeerSoxClient extends EventEmitter {
    * @returns {Promise<Pairing>} The pairing used for connecting.
    */
   createPairing () {
-    if (this._socket.isConnected()) {
-      return Promise.reject(new Error('Socket already connected'))
-    }
-
     return this._api.requestPairing()
   }
 

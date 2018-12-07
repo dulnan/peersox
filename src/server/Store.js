@@ -31,7 +31,8 @@ class Store {
       console.log('Redis is ready.')
     })
 
-    redisClient.on('error', () => {
+    redisClient.on('error', (error) => {
+      console.log(error)
       this._redisReady = false
       console.log('Redis has errored.')
     })
@@ -145,7 +146,7 @@ class Store {
         }
       }
     }
-    return new Validation(isValid)
+    return isValid
   }
 }
 

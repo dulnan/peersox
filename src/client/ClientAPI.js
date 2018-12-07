@@ -23,12 +23,12 @@ class ClientAPI {
       return response.json()
     }).then(pairing => {
       if (pairing) {
-        return new Pairing(pairing)
+        return Promise.resolve(new Pairing(pairing))
       }
 
-      return new Error('Could not request pairing.')
+      return Promise.reject(new Error('Could not request pairing.'))
     }).catch(error => {
-      return error
+      return Promise.reject(error)
     })
   }
 
@@ -42,12 +42,10 @@ class ClientAPI {
       return response.json()
     }).then(config => {
       if (config) {
-        return config
+        return Promise.resolve(config)
       }
 
-      return new Error('Could not request config.')
-    }).catch(error => {
-      return error
+      return Promise.reject(new Error('Could not request config.'))
     })
   }
 
@@ -62,19 +60,17 @@ class ClientAPI {
       method: 'post',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'content-type': 'application/json'
       },
       body: JSON.stringify({ code })
     }).then(response => {
       return response.json()
     }).then(pairing => {
       if (pairing.code && pairing.hash) {
-        return new Pairing(pairing)
+        return Promise.resolve(new Pairing(pairing))
       }
 
-      return new Error('Code is not valid')
-    }).catch(error => {
-      return error
+      return Promise.reject(new Error('Code is not valid.'))
     })
   }
 
@@ -85,22 +81,17 @@ class ClientAPI {
    * @returns {boolean}
    */
   validate (pairing) {
-    const body = JSON.stringify({
-      pairing: pairing
-    })
     return window.fetch(this.url + '/pairing/validate', {
       method: 'post',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'content-type': 'application/json'
       },
-      body: body
+      body: JSON.stringify({ pairing: pairing })
     }).then(response => {
       return response.json()
-    }).then(({ isValid }) => {
-      return isValid
-    }).catch(error => {
-      return error
+    }).then((isValid) => {
+      return Promise.resolve(isValid)
     })
   }
 }
