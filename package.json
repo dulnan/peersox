@@ -1,6 +1,6 @@
 {
   "name": "peersox",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "Simple, high performance client and server for P2P WebRTC and WebSocket data connections.",
   "author": "Jan Hug <me@dulnan.net>",
   "license": "MIT",
@@ -32,7 +32,8 @@
     "docs": "rm -rf ./docs && node_modules/.bin/jsdoc --configure .jsdoc.json --verbose",
     "dev": "webpack --progress --colors --watch --env dev --mode development",
     "test": "mocha --require babel-register --colors ./test/*.spec.js",
-    "test:watch": "mocha --require babel-register --colors -w ./test/*.spec.js"
+    "test:watch": "mocha --require babel-register --colors -w ./test/*.spec.js",
+    "prepublish": "npm run build"
   },
   "dependencies": {
     "body-parser": "^1.18.3",
