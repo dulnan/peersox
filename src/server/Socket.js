@@ -1,7 +1,7 @@
 import { encode, decode } from '../common/dataparser'
 import { INTERNAL_MESSAGE_PREFIX, HANDSHAKE_SUCCESS, HANDSHAKE_FAILED } from '../common/settings'
 
-import { Server as WebSocketServer } from 'ws'
+import WebSocket, { Server as WebSocketServer } from 'ws'
 
 require('util').inspect.defaultOptions.depth = 0
 
@@ -22,37 +22,68 @@ export default class Socket {
     this.socketserver.on('connection', this.onConnection.bind(this))
 
     this.connections = {}
+    this.lobby = {}
+
+    setInterval(() => {
+      this.garbageCollector(this.connections)
+      this.garbageCollector(this.lobby)
+    }, 60 * 1000)
+  }
+
+  garbageCollector (hashMap) {
+    Object.keys(hashMap).forEach(key => {
+      if (hashMap[key] === null) {
+        delete hashMap[key]
+      }
+    })
   }
 
   onMessageClose (client) {
-    let hash = ''
-    if (client._pairing && typeof client._pairing === 'object') {
-      hash = client._pairing.hash
+    this.cleanup(client)
+  }
+
+  closeClient (client) {
+    if (client && client.readyState === WebSocket.OPEN) {
+      client.close()
+    }
+  }
+
+  getHashFromClient (client, secondTry) {
+    if (client && client._pairing && client._pairing.hash) {
+      return client._pairing.hash
     }
 
-    if (client._peer && client._peer._pairing && typeof client._peer._pairing === 'object') {
-      hash = client._peer._pairing.hash
+    if (client && client._peer && !secondTry) {
+      return this.getHashFromClient(client._peer, true)
     }
+  }
 
-    this.connections[hash] = null
+  cleanup (client, hashStr) {
+    let hash = this.getHashFromClient(client) || hashStr
 
-    if (client._peer) {
-      if (client._peer.readyState === 1) {
-        client._peer.close()
+    if (hash) {
+      if (this.connections[hash]) {
+        this.connections[hash] = null
+      }
+      if (this.lobby[hash]) {
+        this.lobby[hash] = null
       }
     }
 
-    if (client.readyState === 1) {
-      client.close()
+    if (client && client._peer) {
+      this.closeClient(client._peer)
     }
+
+    this.closeClient(client)
   }
 
   async onMessageRegister (client, pairing) {
     const isValid = await this.store.validatePairing(pairing)
+    const hash = pairing && typeof pairing === 'object' ? pairing.hash : null
 
     if (!isValid) {
       client.send(HANDSHAKE_FAILED)
-      client.close()
+      this.cleanup(client, hash)
       return
     }
 
@@ -60,17 +91,24 @@ export default class Socket {
 
     client.binaryType = 'arraybuffer'
 
-    if (this.connections[pairing.hash]) {
-      const peer = this.connections[pairing.hash]
+    if (this.lobby[hash]) {
+      const peer = this.lobby[hash]
+      this.lobby[hash] = null
+
       peer._pairing = pairing
       peer._peer = client
       client._peer = peer
+
+      this.connections[hash] = {
+        initiator: peer,
+        joiner: client
+      }
 
       this.sendInternalEvent(client, 'peer.connected', { isInitiator: false, pairing })
       this.sendInternalEvent(peer, 'peer.connected', { isInitiator: true, pairing })
     } else {
       client._pairing = pairing
-      this.connections[pairing.hash] = client
+      this.lobby[hash] = client
     }
   }
 
@@ -86,14 +124,17 @@ export default class Socket {
     }
   }
 
+  /**
+   * @param {WebSocket} client The WebSocket client.
+   */
   onConnection (client) {
-    client.on('close', (closed) => {
+    client.on('close', () => {
       this.onMessageClose(client)
     })
     client.on('message', messageRaw => {
       // Close the connection if the peer connection has closed.
       if (client && client._peer && client._peer.readyState === 3) {
-        client.close()
+        this.cleanup(client)
         return
       }
 

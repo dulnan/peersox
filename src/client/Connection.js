@@ -96,6 +96,8 @@ class Connection extends EventEmitter {
    * Handle the establishing of a connection.
    */
   _handleConnected () {
+    window.clearInterval(this._pingInterval)
+
     this._isConnected = true
     this.emit('connection.established')
     this._debug('info', 'Connection established')

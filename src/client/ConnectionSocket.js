@@ -21,7 +21,6 @@ class ConnectionSocket extends Connection {
     this.timeoutDuration = timeout
     this.timeout = null
     this.closingTimeout = null
-    this.pingInterval = null
   }
 
   get status () {
@@ -73,11 +72,11 @@ class ConnectionSocket extends Connection {
 
         if (message.data === HANDSHAKE_SUCCESS) {
           this.initPeerConnection(socket)
-          resolve(pairing)
+          return resolve(pairing)
         } else if (message.data === HANDSHAKE_FAILED) {
-          reject(new Error('Invalid pairing'))
+          return reject(new Error('Invalid pairing'))
         } else {
-          reject(new Error('Connection failed'))
+          return reject(new Error('Connection failed'))
         }
       }
 
@@ -85,7 +84,7 @@ class ConnectionSocket extends Connection {
       // still reject the promise and clean up.
       this.timeout = window.setTimeout(() => {
         if (!this.isConnected()) {
-          reject(new Error('Connection timed out'))
+          return reject(new Error('Connection timed out'))
         }
       }, this.timeoutDuration)
     })
@@ -144,7 +143,6 @@ class ConnectionSocket extends Connection {
   _handleSocketClose () {
     window.clearTimeout(this.closingTimeout)
     window.clearTimeout(this.timeout)
-    window.clearInterval(this.pingInterval)
     this._handleClose()
   }
 
@@ -155,8 +153,7 @@ class ConnectionSocket extends Connection {
     return new Promise((resolve, reject) => {
       if (!this.isConnected()) {
         this._debug('Info', 'Not connected, can not close connection')
-        resolve()
-        return
+        return resolve()
       }
 
       this.socket.close()

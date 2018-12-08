@@ -179,14 +179,6 @@ class PeerSoxClient extends EventEmitter {
     this._config = {}
 
     /**
-     * Store the timestamp of the latest ping message.
-     *
-     * @member {number}
-     * @private
-     */
-    this._lastPing = Date.now()
-
-    /**
      * Duration in seconds of how long a peer connection can remain silent
      * before it is closed.
      *
@@ -490,6 +482,7 @@ class PeerSoxClient extends EventEmitter {
 
     if (!this._rtc.isConnected() && !this._socket.isConnected()) {
       this.emit(PeerSoxClient.EVENT_CONNECTION_CLOSED)
+      window.clearTimeout(this._pingTimeout)
     }
   }
 
@@ -557,15 +550,16 @@ class PeerSoxClient extends EventEmitter {
    * @param {number} timestamp Timestamp when the ping was received.
    */
   _handlePingMessage (timestamp) {
-    this._lastPing = timestamp
-
+    console.log('handle ping message')
     window.clearTimeout(this._pingTimeout)
 
-    this._pingTimeout = window.setTimeout(() => {
-      this.emit(PeerSoxClient.EVENT_PEER_TIMEOUT)
-      this._rtc.close()
-      this._socket.close()
-    }, this._peerTimeout * 1000)
+    if (this.isConnected()) {
+      this._pingTimeout = window.setTimeout(() => {
+        this.emit(PeerSoxClient.EVENT_PEER_TIMEOUT)
+        this._rtc.close()
+        this._socket.close()
+      }, this._peerTimeout * 1000)
+    }
   }
 }
 
