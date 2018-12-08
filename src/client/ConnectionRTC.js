@@ -154,5 +154,6 @@ class ConnectionRTC extends Connection {
 }
 
 ConnectionRTC.EVENT_RTC_SIGNAL = 'rtc.signal'
+ConnectionRTC.IS_SUPPORTED = SimplePeer.WEBRTC_SUPPORT
 
 export default ConnectionRTC

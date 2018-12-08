@@ -241,6 +241,15 @@ class PeerSoxClient extends EventEmitter {
   }
 
   /**
+   * Get information about the browser support of WebSocket and WebRTC.
+   *
+   * @returns {object}
+   */
+  getDeviceSupport () {
+    return PeerSoxClient.SUPPORTS
+  }
+
+  /**
    * Return the current connection state.
    *
    * @returns {boolean}
@@ -471,12 +480,24 @@ class PeerSoxClient extends EventEmitter {
     this._removeEventListeners()
   }
 
+  /**
+   * Handle when a connection to the WebSocket server is established.
+   *
+   * @private
+   * @param {any} data
+   */
   _handleConnectionEstablished (data) {
     this.emit(PeerSoxClient.EVENT_CONNECTION_ESTABLISHED, data)
   }
 
-  _handleConnnectionClosed (context) {
-    if (context === 'WebRTC') {
+  /**
+   * Handle the closing of a connection.
+   *
+   * @private
+   * @param {string} connection The context name of the connection.
+   */
+  _handleConnnectionClosed (connection) {
+    if (connection === 'WebRTC') {
       this.emit(PeerSoxClient.EVENT_PEER_WEBRTC_CLOSED)
     }
 
@@ -486,6 +507,12 @@ class PeerSoxClient extends EventEmitter {
     }
   }
 
+  /**
+   * Handle the establishment of a peer connection.
+   *
+   * @private
+   * @param {object} data
+   */
   _handlePeerConnected (data) {
     const isInitiator = data.isInitiator === true
     this.emit(PeerSoxClient.EVENT_PEER_CONNECTED, data)
@@ -547,6 +574,7 @@ class PeerSoxClient extends EventEmitter {
   /**
    * Handle incomming ping messages via WebSocket or WebRTC.
    *
+   * @private
    * @param {number} timestamp Timestamp when the ping was received.
    */
   _handlePingMessage (timestamp) {
@@ -625,9 +653,24 @@ PeerSoxClient.EVENT_PEER_TIMEOUT = 'peerTimeout'
  */
 
 /**
+ * The peer connection via WebRTC has closed.
+ *
+ * The connection might still be available via WebSocket.
  * @member
  * @type {string}
  */
 PeerSoxClient.EVENT_PEER_WEBRTC_CLOSED = 'peerRtcClosed'
+
+/**
+ * An object containing
+ * @member
+ * @type {object} SUPPORTS
+ * @property {boolean} SUPPORTS.WEBSOCKET
+ * @property {boolean} SUPPORTS.WEBRTC
+ */
+PeerSoxClient.SUPPORTS = {
+  WEBSOCKET: ConnectionSocket.IS_SUPPORTED,
+  WEBRTC: ConnectionRTC.IS_SUPPORTED
+}
 
 export default PeerSoxClient

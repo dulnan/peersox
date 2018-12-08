@@ -172,4 +172,6 @@ class ConnectionSocket extends Connection {
   }
 }
 
+ConnectionSocket.IS_SUPPORTED = 'WebSocket' in window || 'MozWebSocket' in window
+
 export default ConnectionSocket
