@@ -20,6 +20,10 @@ class ClientAPI {
    */
   requestPairing () {
     return window.fetch(this.url + '/code/get').then(response => {
+      if (!response.ok) {
+        return Promise.reject(new Error(response.statusText))
+      }
+
       return response.json()
     }).then(pairing => {
       if (pairing) {
@@ -39,6 +43,10 @@ class ClientAPI {
    */
   requestConfig () {
     return window.fetch(this.url + '/config').then(response => {
+      if (!response.ok) {
+        return Promise.reject(new Error(response.statusText))
+      }
+
       return response.json()
     }).then(config => {
       if (config) {
@@ -46,6 +54,8 @@ class ClientAPI {
       }
 
       return Promise.reject(new Error('Could not request config.'))
+    }).catch(error => {
+      return Promise.reject(error)
     })
   }
 
@@ -64,6 +74,10 @@ class ClientAPI {
       },
       body: JSON.stringify({ code })
     }).then(response => {
+      if (!response.ok) {
+        return Promise.reject(new Error(response.statusText))
+      }
+
       return response.json()
     }).then(pairing => {
       if (pairing.code && pairing.hash) {
@@ -71,6 +85,8 @@ class ClientAPI {
       }
 
       return Promise.reject(new Error('Code is not valid.'))
+    }).catch(error => {
+      return Promise.reject(error)
     })
   }
 
@@ -89,9 +105,40 @@ class ClientAPI {
       },
       body: JSON.stringify({ pairing: pairing })
     }).then(response => {
+      if (!response.ok) {
+        return Promise.reject(new Error(response.statusText))
+      }
+
       return response.json()
     }).then((isValid) => {
       return Promise.resolve(isValid)
+    }).catch(error => {
+      return Promise.reject(error)
+    })
+  }
+
+  /**
+   * Get an authentication token.
+   *
+   * @returns {string}
+   */
+  getToken () {
+    return window.fetch(this.url + '/token/get', {
+      method: 'get',
+      headers: {
+        'Accept': 'application/json',
+        'content-type': 'application/json'
+      }
+    }).then(response => {
+      if (!response.ok) {
+        return Promise.reject(new Error(response.statusText))
+      }
+
+      return response.json()
+    }).then(({ token }) => {
+      return Promise.resolve(token)
+    }).catch(error => {
+      return Promise.reject(error)
     })
   }
 }

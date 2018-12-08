@@ -114,7 +114,8 @@ class PeerSoxClient extends EventEmitter {
     autoUpgrade = true,
     debug = false,
     simplePeerOptions = {},
-    peerTimeout = 30
+    peerTimeout = 30,
+    socketServerUrl
   } = {}) {
     super()
 
@@ -136,7 +137,7 @@ class PeerSoxClient extends EventEmitter {
      * @private
      */
     this._socket = new ConnectionSocket({
-      url: url.replace(/^http/, 'ws') + '/ws',
+      url: socketServerUrl || url.replace(/^http/, 'ws') + '/ws',
       debug
     })
 
@@ -344,7 +345,7 @@ class PeerSoxClient extends EventEmitter {
    * @returns {Promise<{pairing:Pairing, isInitiator:boolean }>}
    */
   connect (pairing) {
-    return this._socket.connect(pairing)
+    return this._api.getToken().then(token => this._socket.connect(pairing, token))
   }
 
   /**
@@ -575,10 +576,8 @@ class PeerSoxClient extends EventEmitter {
    * Handle incomming ping messages via WebSocket or WebRTC.
    *
    * @private
-   * @param {number} timestamp Timestamp when the ping was received.
    */
-  _handlePingMessage (timestamp) {
-    console.log('handle ping message')
+  _handlePingMessage () {
     window.clearTimeout(this._pingTimeout)
 
     if (this.isConnected()) {

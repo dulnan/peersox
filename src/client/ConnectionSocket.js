@@ -10,7 +10,7 @@ import Connection from './Connection'
  */
 class ConnectionSocket extends Connection {
   constructor ({
-    url = 'http://localhost:3000/peersox/',
+    url = 'ws://localhost:3000/peersox/',
     timeout = 10000,
     debug = false
   } = {}) {
@@ -46,10 +46,10 @@ class ConnectionSocket extends Connection {
    * @param {Pairing} pairing The pairing to use for the WebSocket connection.
    * @returns {Promise}
    */
-  connect (pairing) {
+  connect (pairing, token) {
     return new Promise((resolve, reject) => {
       // Initialize a new WebSocket connection.
-      let socket = new WebSocket(this.url)
+      let socket = new WebSocket(this.url, [token])
       socket.binaryType = 'arraybuffer'
 
       // Add event listener for when socket connection is opened.

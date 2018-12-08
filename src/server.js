@@ -48,6 +48,10 @@ import Socket from './server/Socket.js'
  *     storage: redisClient,
  *     middleware: [
  *       bruteforce.prevent
+ *     ],
+ *     allowOrigins: [
+ *       'http://localhost:8080',
+ *       'https://example.com'
  *     ]
  *   })
  * })
@@ -62,18 +66,26 @@ export class PeerSoxServer {
    * @param {object} options.server An existing http server.
    * @param {number} options.port The port on which the server should run.
    * @param {array} options.middleware Additional middleware for use in express.
+   * @param {array} options.allowOrigins List of origins for which a connection
+   * is allowed.
    */
   constructor (redisClient, {
     app,
     server,
     middleware = [],
-    config
+    config,
+    allowOrigins = []
   } = {}) {
+    if (allowOrigins.length === 0) {
+      console.warn('allowOrigins is empty. WebSocket connections will be allowed from any origin.')
+    }
+
     this.store = new Store(redisClient)
 
     this.socket = new Socket({
       store: this.store,
-      server
+      server,
+      allowOrigins
     })
 
     this.api = new API({

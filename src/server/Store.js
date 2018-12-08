@@ -1,10 +1,11 @@
 import { buildRandomCode, buildRandomHex, codeIsValid, pairingIsValid } from './utils/index.js'
-import { Pairing, Validation } from './../common/classes'
+import { Pairing } from './../common/classes'
 
 import stringHash from 'string-hash'
 import { promisify } from 'util'
 
 const EXPIRE_CODE = 130 // 130 seconds
+const EXPIRE_TOKEN = 10 // 130 seconds
 const EXPIRE_PAIRED = 60 * 60 * 24 * 7 // 7 days
 
 /**
@@ -63,6 +64,26 @@ class Store {
     } while (alreadyUsed)
 
     return hash
+  }
+
+  /**
+   * Generates a random token and checks that it's unique.
+   *
+   * @returns {String} The generated hash.
+   */
+  async getToken () {
+    const token = await this.generateHash()
+    const tokenIsSet = await this.redisSet(token, 'token', 'EX', EXPIRE_TOKEN) === 'OK'
+
+    if (tokenIsSet) {
+      return token
+    }
+  }
+
+  async validateToken (token) {
+    const isValid = await this.keyExists(token)
+    this.redisDel(token)
+    return isValid
   }
 
   /**

@@ -6,12 +6,27 @@ import WebSocket, { Server as WebSocketServer } from 'ws'
 require('util').inspect.defaultOptions.depth = 0
 
 export default class Socket {
-  constructor ({ server, store }) {
+  constructor ({ server, store, allowOrigins } = {}) {
     this.store = store
+
+    this.allowOrigins = {}
+    allowOrigins.forEach(v => {
+      this.allowOrigins[v] = true
+    })
 
     this.socketserver = new WebSocketServer({
       server: server,
-      path: '/ws'
+      path: '/ws',
+      verifyClient: async ({ origin, req }) => {
+        if (this.allowOrigins.length > 0 && !this.allowOrigins.hasOwnProperty(origin)) {
+          return false
+        }
+
+        const token = req.headers['sec-websocket-protocol']
+        const isValid = await this.store.validateToken(token)
+
+        return isValid
+      }
     })
 
     this.messageHandlers = {

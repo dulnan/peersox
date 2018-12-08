@@ -10,14 +10,3 @@ export class Pairing {
     this.hash = hash
   }
 }
-
-/**
- * A validation.
- *
- * @param {Boolean} isValid
- */
-export class Validation {
-  constructor (isValid) {
-    this.isValid = isValid
-  }
-}
