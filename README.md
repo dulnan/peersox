@@ -1,14 +1,15 @@
-# PeerSox
-### Simple, high performance client and server for P2P WebRTC and WebSocket data connections.
+![Logo](misc/peersox-header.png)
+## Low latency client and server for P2P WebRTC and WebSocket data connections.
 
-* Ready to use client library and server
-* WebRTC data channels and WebSockets fallback
-* Generate and validate pairing codes and hashes
-* Focus on low latency and minimal overhead
-* Send strings or binary data (e.g. ArrayBuffer)
+* **Ready to use client library and server**
+* **WebRTC data channels and WebSockets fallback**
+* **Generate and validate pairing codes and hashes**
+* **Focus on low latency and minimal overhead**
+* **Send strings or binary data (e.g. ArrayBuffer)**
+
+<hr>
 
 **[Documentation / API](https://peersox.netlify.com)**
-
 
 ## Usage
 PeerSox consists of a client (for use in the browser) and a server (in a node
