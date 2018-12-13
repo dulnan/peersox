@@ -1,26 +1,12 @@
 {
-  "env": {
-    "server": {
-      "plugins": ["babel-plugin-add-module-exports"],
-      "presets": ["env"]
-      // "presets": [
-      //   ["env", {
-      //     "presets": ["env", "stage-2"]
-      //     "targets": {
-      //       "node": "1.0.0"
-      //     }
-      //   }]
-      // ]
-    },
-    "client": {
-      "plugins": ["babel-plugin-add-module-exports"],
-      "presets": [
-        ["env", {
-          "targets": {
-            "browsers": ["last 2 versions", "safari >= 7"],
-          }
-        }]
-      ]
-    }
-  }
+  "presets": [
+    ["@babel/preset-env", {
+      "targets": {
+        "node": "8.14.0"
+      }
+    }]
+  ],
+  "plugins": [
+    "@babel/plugin-proposal-object-rest-spread"
+  ]
 }

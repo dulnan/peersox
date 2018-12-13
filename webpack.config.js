@@ -17,7 +17,7 @@ const configModule = {
     {
       test: /(\.jsx|\.js)$/,
       loader: 'eslint-loader',
-      exclude: /node_modules/
+      exclude: /node_modules|simple-peer/
     }
   ]
 }
@@ -41,7 +41,7 @@ function getConfigClient (mode, libraryName) {
     output: {
       path: path.join(__dirname, '/lib'),
       filename: getFileName('client', mode, libraryName),
-      library: libraryName,
+      library: 'PeerSoxClient',
       libraryTarget: 'umd',
       umdNamedDefine: true
     },
@@ -66,7 +66,7 @@ function getConfigServer (mode, libraryName) {
     output: {
       path: path.join(__dirname, '/lib'),
       filename: getFileName('server', mode, libraryName),
-      library: libraryName,
+      library: 'PeerSoxServer',
       libraryTarget: 'umd',
       umdNamedDefine: true
     },

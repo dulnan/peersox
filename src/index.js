@@ -3,7 +3,7 @@ import ClientAPI from './client/ClientAPI'
 import ConnectionRTC from './client/ConnectionRTC'
 import ConnectionSocket from './client/ConnectionSocket'
 import getDebugger from './common/debug'
-import Cookies from 'js-cookie'
+import Cookies from 'universal-cookie'
 
 /**
  * @external EventEmitter
@@ -187,6 +187,14 @@ class PeerSoxClient extends EventEmitter {
      * @private
      */
     this._peerTimeout = peerTimeout
+
+    /**
+     * The cookie context of universal-cookie.
+     *
+     * @member {Cookies}
+     * @private
+     */
+    this._cookies = new Cookies()
 
     /**
      * Store the timeout for the ping timeout.
@@ -431,7 +439,7 @@ class PeerSoxClient extends EventEmitter {
    * @returns {Promise<Pairing|null>} The restorable pairing if it exists.
    */
   restorePairing () {
-    const cookie = Cookies.get('pairing')
+    const cookie = this._cookies.get('pairing')
 
     if (!cookie) {
       return Promise.resolve(null)
@@ -460,14 +468,14 @@ class PeerSoxClient extends EventEmitter {
    * @param {Pairing} pairing The pairing to save.
    */
   storePairing (pairing) {
-    Cookies.set('pairing', `${pairing.code}_${pairing.hash}`)
+    this._cookies.set('pairing', `${pairing.code}_${pairing.hash}`, { path: '/' })
   }
 
   /**
    * Delete all pairing cookies.
    */
   deletePairing () {
-    Cookies.remove('pairing')
+    this._cookies.remove('pairing')
   }
 
   /**
