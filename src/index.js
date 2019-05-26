@@ -26,16 +26,18 @@ import Cookies from 'universal-cookie'
  *   debug: true
  * })
  *
+ * await peersox.init()
+ *
  * // Request a new Pairing.
  * // If successful, the client is now connected to the PeerSox server and
  * // waiting for the joiner to connet to the server.
- * peersox.createPairing().then(pairing => {
- *   // The pairing code the joiner will need to use.
- *   console.log(pairing.code) // => "123456"
- *   peersox.connect(pairing).then(() => {
- *     // You are now connected to the server.
- *   })
- * })
+ * const pairing = await peersox.createPairing()
+ *
+ * // The pairing code the joiner will need to use.
+ * console.log(pairing.code) // => "123456"
+ *
+ * await peersox.connect(pairing)
+ * // You are now connected to the server.
  *
  * // Once the joiner (the peer of this client) is connected, we can start
  * // listening for incoming messages.
@@ -59,16 +61,15 @@ import Cookies from 'universal-cookie'
  *   debug: true
  * })
  *
+ * await peersox.init()
+ *
  * // Start pairing with the initiator.
- * peersox.joinPairing('123456').then(pairing => {
- *   // You can now connect with the pairing.
+ * const pairing = await peersox.joinPairing('123456')
  *
- *   peersox.connect(pairing).then(() => {
- *     // You are now connnected with the server.
- *   })
- * })
+ * // You can now connect with the pairing.
+ * await peersox.connect(pairing)
  *
- * // The pairing succeeded when the following event is emitted.
+ * // The pairing with the peer succeeded when the following event is emitted.
  * peersox.on('peerConnected', () => {
  *   // The client is now connected to its peer.
  *   // Let's send a message every second.
@@ -205,7 +206,6 @@ class PeerSoxClient extends EventEmitter {
     this._pingTimeout = null
 
     this._addEventListeners()
-    this._requestConfig()
 
     // Add a function to the global scope to retrive the client status.
     if (debug) {
@@ -247,6 +247,15 @@ class PeerSoxClient extends EventEmitter {
   set onString (fn) {
     this._socket._onString = fn
     this._rtc._onString = fn
+  }
+
+  /**
+   * Initialize peersox by getting the config.
+   *
+   * @returns {Promise<object>} The config requested from the server.
+   */
+  init () {
+    return this._requestConfig()
   }
 
   /**
@@ -574,9 +583,10 @@ class PeerSoxClient extends EventEmitter {
    * @private
    */
   _requestConfig () {
-    this._api.requestConfig().then(config => {
+    return this._api.requestConfig().then(config => {
       this._config = config
       this._rtc.updateIceServers(config.iceServers)
+      this.emit(PeerSoxClient.EVENT_SERVER_READY)
     })
   }
 
@@ -597,6 +607,18 @@ class PeerSoxClient extends EventEmitter {
     }
   }
 }
+
+/**
+ * Config was requested from the server and a connection can be established.
+ *
+ * @event PeerSoxClient#serverReady
+ */
+
+/**
+ * @member
+ * @type {string}
+ */
+PeerSoxClient.EVENT_SERVER_READY = 'serverReady'
 
 /**
  * A connection to the server has been established.

@@ -21,7 +21,7 @@ class ClientAPI {
   requestPairing () {
     return window.fetch(this.url + '/code/get').then(response => {
       if (!response.ok) {
-        return Promise.reject(new Error(response.statusText))
+        throw response
       }
 
       return response.json()
@@ -44,7 +44,7 @@ class ClientAPI {
   requestConfig () {
     return window.fetch(this.url + '/config').then(response => {
       if (!response.ok) {
-        return Promise.reject(new Error(response.statusText))
+        throw response
       }
 
       return response.json()
@@ -75,7 +75,7 @@ class ClientAPI {
       body: JSON.stringify({ code })
     }).then(response => {
       if (!response.ok) {
-        return Promise.reject(new Error(response.statusText))
+        throw response
       }
 
       return response.json()
@@ -106,7 +106,7 @@ class ClientAPI {
       body: JSON.stringify({ pairing: pairing })
     }).then(response => {
       if (!response.ok) {
-        return Promise.reject(new Error(response.statusText))
+        throw response
       }
 
       return response.json()
@@ -131,7 +131,7 @@ class ClientAPI {
       }
     }).then(response => {
       if (!response.ok) {
-        return Promise.reject(new Error(response.statusText))
+        throw response
       }
 
       return response.json()
