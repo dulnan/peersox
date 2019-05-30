@@ -554,11 +554,11 @@ class PeerSoxClient extends EventEmitter {
     this._socket.on(ConnectionSocket.EVENT_ESTABLISHED, this._handleConnectionEstablished.bind(this))
     this._socket.on(ConnectionSocket.EVENT_CLOSED, this._handleConnnectionClosed.bind(this))
     this._socket.on(ConnectionSocket.EVENT_PEER_CONNECTED, this._handlePeerConnected.bind(this))
-    this._socket.on(ConnectionSocket.EVENT_PEER_SIGNAL, this._rtc.signal.bind(this._rtc))
     this._socket.on(ConnectionSocket.EVENT_PEER_PING, this._handlePingMessage.bind(this))
-    this._rtc.on(ConnectionRTC.EVENT_RTC_SIGNAL, this._socket.sendSignal.bind(this._socket))
-    this._rtc.on('peer.ping', this._handlePingMessage.bind(this))
-    this._rtc.on('connection.closed', this._handleConnnectionClosed.bind(this))
+    this._socket.on(ConnectionSocket.EVENT_PEER_SIGNAL, (signal) => this._rtc.signal(signal))
+    this._rtc.on(ConnectionRTC.EVENT_RTC_SIGNAL, (signal) => this._socket.sendSignal(signal))
+    this._rtc.on(ConnectionRTC.EVENT_PEER_PING, this._handlePingMessage.bind(this))
+    this._rtc.on(ConnectionRTC.EVENT_CLOSED, this._handleConnnectionClosed.bind(this))
   }
 
   /**
@@ -567,14 +567,14 @@ class PeerSoxClient extends EventEmitter {
    * @private
    */
   _removeEventListeners () {
-    this._socket.off('connection.established', this._handleConnectionEstablished)
-    this._socket.off('connection.closed', this._handleConnnectionClosed)
-    this._socket.off('peer.connected', this._handlePeerConnected)
-    this._socket.off('peer.signal', this._rtc.signal)
-    this._socket.off('peer.ping', this._handlePingMessage)
-    this._rtc.off('rtc.signal', this._socket.sendSignal)
-    this._rtc.off('peer.ping', this._handlePingMessage)
-    this._rtc.off('connection.closed', this._handleConnnectionClosed)
+    this._socket.removeAllListeners(ConnectionSocket.EVENT_ESTABLISHED)
+    this._socket.removeAllListeners(ConnectionSocket.EVENT_CLOSED)
+    this._socket.removeAllListeners(ConnectionSocket.EVENT_PEER_CONNECTED)
+    this._socket.removeAllListeners(ConnectionSocket.EVENT_PEER_PING)
+    this._socket.removeAllListeners(ConnectionSocket.EVENT_PEER_SIGNAL)
+    this._rtc.removeAllListeners(ConnectionRTC.EVENT_RTC_SIGNAL)
+    this._rtc.removeAllListeners(ConnectionRTC.EVENT_PEER_PING)
+    this._rtc.removeAllListeners(ConnectionRTC.EVENT_CLOSED)
   }
 
   /**
