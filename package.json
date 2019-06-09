@@ -29,7 +29,10 @@
   },
   "scripts": {
     "build": "webpack --env build --mode production",
-    "docs": "rm -rf ./docs && node_modules/.bin/jsdoc --configure .jsdoc.json --verbose",
+    "docs": "npm run docs:clean && npm run docs:jsdoc && npm run docs:assets",
+    "docs:clean": "rm -rf ./docs",
+    "docs:jsdoc": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose",
+    "docs:assets": "cp -r misc docs/misc",
     "dev": "webpack --progress --colors --watch --env dev --mode development",
     "test": "mocha --require babel-register --colors ./test/*.spec.js",
     "test:watch": "mocha --require babel-register --colors -w ./test/*.spec.js",
