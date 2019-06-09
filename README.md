@@ -38,32 +38,42 @@ The client is designed to be as simple and performant as possible.
 ```javascript
 let peersox = new PeerSoxClient('http://localhost:3000')
 
-peersox.createPairing().then(pairing => {
-  console.log(pairing.code)
-  // => "123456"
-})
-peersox.onBinary = (data) => {
-  const buffer = new Uint8Array(data);
-  console.log(buffer)
-}
+await peersox.init()
 
-peersox.onString = (data) => {
-  console.log(data)
-}
+const pairing = await peersox.createPairing()
+console.log(pairing.code) // => "123456"
+
+peersox.on('peerConnected', () => {
+  // Receive binary data (e.g. ArrayBuffer).
+  peersox.onBinary = (data) => {
+    const buffer = new Uint8Array(data);
+    console.log(buffer)
+  }
+
+  // Receive string data.
+  peersox.onString = (data) => {
+    console.log(data)
+  }
+})
+
+peersox.connect(pairing)
 ```
 
 #### Joiner
 ```javascript
 let peersox = new PeerSoxClient('http://localhost:3000')
 
-peersox.joinPairing('123456')
+await peersox.init()
 
-peersox.on('peer.connected', () => {
-  const byteArray = new Uint8Array([17, 21, 35])
+peersox.on('peerConnected', () => {
+  const byteArray = new Uint8Array([17, 21, 42])
 
   peersox.send(byteArray.buffer)
-  peersox.send(numbers.join(';'))
+  peersox.send('This is my message')
 })
+
+const pairing = await peersox.joinPairing('123456')
+await peersox.connect(pairing)
 ```
 
 ## Acknowledgement

@@ -21,23 +21,11 @@ import Cookies from 'universal-cookie'
  *
  * @example <caption>The initiator</caption>
  * // Create a new client.
- * let peersox = new PeerSoxClient({
- *   url: 'http://localhost:3000',
+ * let peersox = new PeerSoxClient('http://localhost:3000', {
  *   debug: true
  * })
  *
  * await peersox.init()
- *
- * // Request a new Pairing.
- * // If successful, the client is now connected to the PeerSox server and
- * // waiting for the joiner to connet to the server.
- * const pairing = await peersox.createPairing()
- *
- * // The pairing code the joiner will need to use.
- * console.log(pairing.code) // => "123456"
- *
- * await peersox.connect(pairing)
- * // You are now connected to the server.
  *
  * // Once the joiner (the peer of this client) is connected, we can start
  * // listening for incoming messages.
@@ -54,10 +42,21 @@ import Cookies from 'universal-cookie'
  *   }
  * })
  *
+ * // Request a new Pairing.
+ * // If successful, the client is now connected to the PeerSox server and
+ * // waiting for the joiner to connet to the server.
+ * const pairing = await peersox.createPairing()
+ *
+ * // The pairing code the joiner will need to use.
+ * console.log(pairing.code) // => "123456"
+ *
+ * // Connect with the received pairing.
+ * peersox.connect(pairing)
+ *
+ *
  * @example <caption>The joiner</caption>
  * // Create a new client.
- * let peersox = new PeerSoxClient({
- *   url: 'http://localhost:3000',
+ * let peersox = new PeerSoxClient('http://localhost:3000', {
  *   debug: true
  * })
  *
@@ -65,9 +64,6 @@ import Cookies from 'universal-cookie'
  *
  * // Start pairing with the initiator.
  * const pairing = await peersox.joinPairing('123456')
- *
- * // You can now connect with the pairing.
- * await peersox.connect(pairing)
  *
  * // The pairing with the peer succeeded when the following event is emitted.
  * peersox.on('peerConnected', () => {
@@ -89,6 +85,9 @@ import Cookies from 'universal-cookie'
  *     peersox.send(numbers.join(';'))
  *   }, 1000)
  * })
+ *
+ * // You can now connect with the pairing.
+ * peersox.connect(pairing)
  *
  * @class
  * @extends {external:EventEmitter}
