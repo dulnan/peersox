@@ -71,7 +71,7 @@
     "eslint-plugin-standard": "^4.0.0",
     "jsdoc": "^3.6.2",
     "jsdoc-template": "github:braintree/jsdoc-template",
-    "jsdom": "15.1.1",
+    "jsdom": "16.5.0",
     "jsdom-global": "3.0.2",
     "minami": "^1.2.3",
     "mocha": "^6.1.4",
